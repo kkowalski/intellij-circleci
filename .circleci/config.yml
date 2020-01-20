@@ -1,0 +1,16 @@
+version: 2.1
+
+workflows:
+  ci:
+    jobs:
+      - test
+
+jobs:
+  test:
+    docker:
+      - image: gradle:6.0-jdk8
+    steps:
+      - checkout
+      - run:
+          name: Run tests
+          command: ./gradlew test
