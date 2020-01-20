@@ -14,7 +14,7 @@ apply plugin: 'java'
 apply plugin: 'kotlin'
 
 group 'com.circleci'
-version '0.0.4.alpha'
+version '0.0.5'
 
 sourceCompatibility = 1.8
 
