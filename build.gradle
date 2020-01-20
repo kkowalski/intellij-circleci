@@ -1,0 +1,56 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.61"
+    }
+}
+
+plugins {
+    id 'org.jetbrains.intellij' version '0.4.15'
+}
+apply plugin: 'java'
+apply plugin: 'kotlin'
+
+group 'com.circleci'
+version '0.0.4.alpha'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.10.1'
+}
+
+//kotlinOptions {
+//    jvmTarget = '1.8'
+//}
+
+//publishPlugin {
+//    token intellijPublishToken
+//}
+
+// See https://github.com/JetBrains/gradle-intellij-plugin/
+intellij {
+    pluginName = "intellij-circleci"
+    version '2019.3.1'
+}
+
+//patchPluginXml {
+//    changeNotes """
+//      Add change notes here.<br>
+//      <em>most HTML tags may be used</em>"""
+//}
+
+buildPlugin {
+    archiveBaseName.set("intellij-circleci")
+}
+
+publishPlugin {
+    channels 'alpha'
+}

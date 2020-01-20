@@ -1,0 +1,47 @@
+<idea-plugin>
+    <id>com.circleci.intellij</id>
+    <name>CircleCI</name>
+    <vendor email="chris.kowalski@circleci.com" url="https://www.circleci.com">CircleCI</vendor>
+
+    <description><![CDATA[
+    Provides intergration with <a href="https://circleci.com">CircleCI</a>.
+    ]]></description>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.circleci.CircleCISettings"/>
+        <toolWindow id="CircleCI" icon="/icons/toolbox_logo.svg" anchor="right"
+                    factoryClass="com.circleci.CircleCIToolWindowFactory"/>
+        <projectConfigurable groupId="tools" instance="com.circleci.ui.CircleCIProjectsConfigurable"
+                             id="circleci" displayName="CircleCI" nonDefaultProject="true">
+        </projectConfigurable>
+    </extensions>
+    <actions>
+        <group id="CircleCI.toolbar">
+            <action id="CircleCI.RefreshData"
+                    class="com.circleci.actions.RefreshDataAction"
+                    icon="AllIcons.Actions.Refresh"/>
+            <action id="CircleCI.AddProject"
+                    class="com.circleci.actions.AddProjectDialog"
+                    icon="AllIcons.General.Add"/>
+            <action id="CircleCI.projectPicker"
+                    class="com.circleci.actions.CircleCIProjectComboBox"/>
+            <action id="CircleCI.Settings"
+                    class="com.circleci.actions.OpenSettingsDialog"
+                    icon="AllIcons.General.Settings"/>
+            <separator/>
+        </group>
+        <group id="CircleCI.Build.ToolWindow.List.Popup">
+            <action id="CircleCI.Build.List.OpenBuild" icon="/icons/menu_icon.svg"
+                    class="com.circleci.actions.OpenBuild"/>
+            <action id="CircleCI.Build.List.OpenWorkflow"
+                    class="com.circleci.actions.OpenWorkflow"/>
+            <action id="CircleCI.Build.List.OpenCommitInGithub" icon="/vcs/vendors/github.svg"
+                    class="com.circleci.actions.OpenCommitOnGithub"/>
+            <action id="CircleCI.Build.List.CancelBuild"
+                    class="com.circleci.actions.CancelBuild"/>
+            <action id="CircleCI.Build.List.RerunBuild"
+                    class="com.circleci.actions.RerunBuild"/>
+        </group>
+    </actions>
+
+</idea-plugin>
