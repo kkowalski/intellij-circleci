@@ -11,6 +11,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.components.JBLoadingPanel;
 import com.intellij.vcs.log.ui.frame.ProgressStripe;
@@ -25,6 +26,9 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Kowalski
  */
 public class BuildListLoader {
+
+    private static final Logger LOG = Logger.getInstance(BuildListLoader.class);
+
     private CollectionListModel<Build> listModel;
     private JBLoadingPanel loadingPanel;
     private ProgressStripe progressStripe;
@@ -63,7 +67,6 @@ public class BuildListLoader {
 
         if (!loading) {
             loading = true;
-            System.out.println("Loading started.");
             updateUIOnLoadingStarted(loadRequest);
 
             JobScheduler.getScheduler().schedule(() -> {
@@ -85,9 +88,8 @@ public class BuildListLoader {
                     loading = false;
                     updateUIAfterLoadingFinished();
 
-                    System.out.println("Loading finished.");
                     Instant end = Instant.now();
-                    System.out.println("Fetching builds time : " + Duration.between(start, end).getNano() / 1000_1000 + "ms");
+                    LOG.debug("Fetching builds time : " + Duration.between(start, end).getNano() / 1000_1000 + "ms");
                 }
             }, 0, TimeUnit.SECONDS);
         }
