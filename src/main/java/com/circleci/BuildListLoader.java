@@ -163,6 +163,7 @@ public class BuildListLoader {
                 listModel.add(builds.subList(lastLocalPositionInFetched + 1, builds.size()));
             }
         } else {
+            infoPanel.setVisible(false);
             listModel.removeAll();
             listModel.add(builds);
         }
