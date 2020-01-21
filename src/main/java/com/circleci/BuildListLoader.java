@@ -111,7 +111,7 @@ public class BuildListLoader {
         } else if (loadRequest instanceof RefreshRequest) {
             buildsRequestParameters = getBuildsRequestParameters(0, 25);
         } else {
-            buildsRequestParameters = getBuildsRequestParameters(0, latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1);
+            buildsRequestParameters = getBuildsRequestParameters(0, Math.min(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 100));
         }
         return buildsRequestParameters;
     }
@@ -169,7 +169,7 @@ public class BuildListLoader {
 
             // prepend new builds
             int i = 0;
-            while (!builds.get(i).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
+            while (i < builds.size() && !builds.get(i).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
                 i++;
             }
             listModel.addAll(0, builds.subList(0, i));
