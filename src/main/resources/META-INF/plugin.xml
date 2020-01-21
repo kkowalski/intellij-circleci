@@ -4,7 +4,12 @@
     <vendor email="chris.kowalski@circleci.com" url="https://www.circleci.com">CircleCI</vendor>
 
     <description><![CDATA[
-    Provides intergration with <a href="https://circleci.com">CircleCI</a>.
+    Provides integration with <a href="https://circleci.com">CircleCI</a>.
+    Tries to optimize development flow by:
+    <ul>
+        <li>Reducing time to notice pipeline failure</li>
+        <li>Reducing time to get to the cause of pipeline failure</li>
+    </ul>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>

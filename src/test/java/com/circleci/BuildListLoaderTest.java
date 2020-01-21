@@ -60,9 +60,9 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
         assertEquals(listModel.getElementAt(listModel.getSize() - 1), fetchedBuilds.getLast());
     }
 
-    private Build build(Integer buildNum) {
+    private Build build(int buildNum) {
         Build build = new Build();
-        build.setBuildNumber(buildNum.toString());
+        build.setBuildNumber(buildNum);
         build.setOrganization("circleci");
         build.setProject("circle");
         build.setUrl("https:" + buildNum);

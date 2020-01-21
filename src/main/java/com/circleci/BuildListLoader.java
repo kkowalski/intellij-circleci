@@ -15,8 +15,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.components.JBLoadingPanel;
 import com.intellij.vcs.log.ui.frame.ProgressStripe;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -38,7 +40,6 @@ public class BuildListLoader {
 
     private boolean loading = false;
     private List<Build> lastCheckBuilds;
-    private Instant lastCheckTimestamp;
     private Project lastActiveProject;
 
     public BuildListLoader(CollectionListModel<Build> listModel, JBLoadingPanel loadingPanel,
@@ -72,11 +73,18 @@ public class BuildListLoader {
             JobScheduler.getScheduler().schedule(() -> {
                 Instant start = Instant.now();
                 try {
+                    Build latest = getLatest();
+                    if (latest == null) {
+                        return;
+                    }
+                    // TODO refactor this
+                    GetBuildsRequestParameters buildsRequestParameters = resolveGetBuildsRequestParameters(loadRequest, latest);
+
                     List<Build> builds;
-                    if (mergeRequestWithFreshCheckData(loadRequest)) {
+                    if (mergeRequestWithFreshCheckData(loadRequest, latest)) {
                         builds = lastCheckBuilds;
                     } else {
-                        builds = JSON.fromJsonString(Requests.getBuilds(getBuildsRequestParameters(loadRequest)).readString(),
+                        builds = JSON.fromJsonString(Requests.getBuilds(buildsRequestParameters).readString(),
                                 new TypeReference<List<Build>>() {
                                 });
                     }
@@ -95,8 +103,28 @@ public class BuildListLoader {
         }
     }
 
-    private boolean mergeRequestWithFreshCheckData(LoadRequest loadRequest) {
-        return loadRequest instanceof MergeRequest && Instant.now().getEpochSecond() - lastCheckTimestamp.getEpochSecond() > 0;
+    @NotNull
+    private GetBuildsRequestParameters resolveGetBuildsRequestParameters(LoadRequest loadRequest, Build latest) {
+        GetBuildsRequestParameters buildsRequestParameters;
+        if (loadRequest instanceof MoreRequest) {
+            buildsRequestParameters = getBuildsRequestParameters(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 10);
+        } else if (loadRequest instanceof RefreshRequest) {
+            buildsRequestParameters = getBuildsRequestParameters(0, 25);
+        } else {
+            buildsRequestParameters = getBuildsRequestParameters(0, latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1);
+        }
+        return buildsRequestParameters;
+    }
+
+    private Build getLatest() throws IOException {
+        List<Build> builds = JSON.fromJsonString(Requests.getBuilds(getBuildsRequestParameters(0, 1)).readString(),
+                new TypeReference<List<Build>>() {
+                });
+        return builds.size() > 0 ? builds.get(0) : null;
+    }
+
+    private boolean mergeRequestWithFreshCheckData(LoadRequest loadRequest, Build latest) {
+        return loadRequest instanceof MergeRequest && lastCheckBuilds != null && latest.getBuildNumber().equals(lastCheckBuilds.get(0).getBuildNumber());
     }
 
     private void updateUIOnLoadingStarted(LoadRequest loadRequest) {
@@ -120,17 +148,19 @@ public class BuildListLoader {
             // we have new head of the list
             if (!builds.get(0).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
                 infoPanel.setVisible(true);
+                lastCheckBuilds = builds;
+                lastActiveProject = settings.activeProject;
+                return;
             }
 
             // checking if status of any of the builds changed
             for (int i = 0; i < builds.size(); i++) {
                 if (!builds.get(i).getStatus().equals(listModel.getItems().get(i).getStatus())) {
                     infoPanel.setVisible(true);
+                    lastCheckBuilds = builds;
                 }
             }
-
-            lastCheckBuilds = builds;
-            lastCheckTimestamp = Instant.now();
+            
             lastActiveProject = settings.activeProject;
         } else if (loadRequest instanceof MergeRequest) {
             if (lastActiveProject != settings.activeProject) {
@@ -169,9 +199,9 @@ public class BuildListLoader {
         }
     }
 
-    private GetBuildsRequestParameters getBuildsRequestParameters(LoadRequest loadRequest) {
+    private GetBuildsRequestParameters getBuildsRequestParameters(int offset, int limit) {
         return new GetBuildsRequestParameters(settings.activeProject.provider.equals("Github") ? "gh" : "bb",
                 settings.activeProject.organization, settings.activeProject.name,
-                loadRequest.getLimit(), loadRequest.getOffset());
+                limit, offset);
     }
 }

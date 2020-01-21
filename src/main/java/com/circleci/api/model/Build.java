@@ -15,7 +15,7 @@ public class Build {
     String vcsURL;
     String status;
     @JsonProperty("build_num")
-    String buildNumber;
+    Integer buildNumber;
     String branch;
     @JsonProperty("author_name")
     String author;
@@ -96,11 +96,11 @@ public class Build {
         this.url = url;
     }
 
-    public String getBuildNumber() {
+    public Integer getBuildNumber() {
         return buildNumber;
     }
 
-    public void setBuildNumber(String buildNumber) {
+    public void setBuildNumber(Integer buildNumber) {
         this.buildNumber = buildNumber;
     }
 

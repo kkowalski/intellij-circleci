@@ -145,7 +145,12 @@ public class CircleCIToolWindow {
                 return;
             }
 
-            listLoader.load(check(listModel.getSize()));
+            if (listModel.getSize() > 1000) {
+                listLoader.load(refresh());
+            } else {
+                listLoader.load(check(listModel.getSize()));
+            }
+
         }, 5, 15, TimeUnit.SECONDS);
 
         if (settings.activeProject != null) {
