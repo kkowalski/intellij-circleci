@@ -110,7 +110,7 @@ public class CircleCIToolWindow {
         jEditorPane.setText("Build list is outdated. <a href=''>Refresh</a>");
         jEditorPane.addHyperlinkListener(e -> {
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-                listLoader.load(merge(listModel.getSize()));
+                listLoader.load(merge());
             } else {
                 if (e.getEventType() == HyperlinkEvent.EventType.ENTERED) {
                     jEditorPane.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -135,7 +135,7 @@ public class CircleCIToolWindow {
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().getModel().addChangeListener(e -> {
             if (listModel.getSize() > 0 && isScrollAtThreshold(scrollPane)) {
-                listLoader.load(more(listModel.getSize()));
+                listLoader.load(more());
             }
         });
         content.addToCenter(scrollPane);
@@ -144,7 +144,7 @@ public class CircleCIToolWindow {
             if (settings.activeProject == null || listModel.getSize() == 0) {
                 return;
             }
-            listLoader.load(check(listModel.getSize()));
+            listLoader.load(check());
         }, 5, 15, TimeUnit.SECONDS);
 
         if (settings.activeProject != null) {
