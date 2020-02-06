@@ -10,17 +10,16 @@ import javax.swing.*;
 
 import static com.circleci.LoadRequests.more;
 
-public class ScrollPane extends JBScrollPane {
+class ScrollPanel extends JBScrollPane {
 
-    public ScrollPane(JBList<Build> list, BuildListLoader listLoader) {
+    public ScrollPanel(JBList<Build> list, BuildListLoader listLoader) {
         setViewportView(list);
         setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         ScrollingUtil.installActions(list);
-        ScrollPane scrollPane = this;
         getVerticalScrollBar().getModel().addChangeListener(e -> {
-            if (list.getModel().getSize() > 0 && isScrollAtThreshold(scrollPane)) {
+            if (list.getModel().getSize() > 0 && isScrollAtThreshold(ScrollPanel.this)) {
                 listLoader.load(more());
             }
         });

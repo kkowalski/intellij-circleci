@@ -11,27 +11,28 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 
-public class CircleCILoadingPanel extends JBLoadingPanel {
+class LoadingPanel extends JBLoadingPanel {
 
-    public CircleCILoadingPanel(@NotNull Disposable parent, JComponent content, BuildListLoader buildListLoader) {
+    public LoadingPanel(@NotNull Disposable parent, JComponent content, BuildListLoader buildListLoader) {
         super(new BorderLayout(), parent);
 
         ProgressStripe progressStripe = new ProgressStripe(content, parent, ProgressWindow.DEFAULT_PROGRESS_DIALOG_POSTPONE_TIME_MILLIS);
         add(progressStripe);
 
-        JBLoadingPanel loadingPanel = this;
         buildListLoader.addLoadingListener(new LoadingListener() {
             @Override
             public void loadingStarted(boolean reload) {
                 if (reload) {
-                    loadingPanel.startLoading();
+                    LoadingPanel.this.startLoading();
                 }
                 progressStripe.startLoading();
             }
 
             @Override
             public void loadingFinished() {
-                loadingPanel.stopLoading();
+                LoadingPanel.this.stopLoading();
+                LoadingPanel.this.revalidate();
+                LoadingPanel.this.repaint();
                 progressStripe.stopLoading();
             }
         });
