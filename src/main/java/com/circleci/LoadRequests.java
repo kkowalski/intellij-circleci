@@ -10,8 +10,8 @@ public class LoadRequests {
         return new MergeRequest();
     }
 
-    public static LoadRequest refresh() {
-        return new RefreshRequest();
+    public static LoadRequest reload() {
+        return new ReloadRequest();
     }
 
     public static LoadRequest more() {
@@ -27,7 +27,7 @@ abstract class LoadRequest {
 class CheckRequest extends LoadRequest {
 }
 
-class RefreshRequest extends LoadRequest {
+class ReloadRequest extends LoadRequest {
 }
 
 class MergeRequest extends LoadRequest {

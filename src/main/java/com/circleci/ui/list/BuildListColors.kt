@@ -1,4 +1,4 @@
-package com.circleci.ui
+package com.circleci.ui.list
 
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.UIUtil

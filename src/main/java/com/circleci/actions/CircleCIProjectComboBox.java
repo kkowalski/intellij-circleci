@@ -3,7 +3,7 @@ package com.circleci.actions;
 import com.circleci.CircleCIEvents;
 import com.circleci.CircleCISettings;
 import com.circleci.api.model.Project;
-import com.circleci.ui.ActiveProjectChangeEvent;
+import com.circleci.ActiveProjectChangeEvent;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;

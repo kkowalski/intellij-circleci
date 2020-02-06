@@ -2,23 +2,20 @@ package com.circleci.ui;
 
 import com.circleci.*;
 import com.circleci.api.model.Build;
+import com.circleci.ui.list.BuildList;
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.progress.util.ProgressWindow;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.*;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBLoadingPanel;
-import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.components.BorderLayoutPanel;
-import com.intellij.vcs.log.ui.frame.ProgressStripe;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -35,16 +32,19 @@ public class CircleCIToolWindow {
     private JBLoadingPanel loadingPanel;
 
     public CircleCIToolWindow(ToolWindow toolWindow, com.intellij.openapi.project.Project project) {
-        LinkLabel<?> linkLabel = LinkLabel.create("Open Settings", () -> {
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, "CircleCI");
-        });
-        linkLabel.setVerticalTextPosition(SwingConstants.CENTER);
-        linkLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        JPanel settingsPanel = JBUI.Panels.simplePanel().addToCenter(linkLabel);
-
         Disposable disposable = Disposer.newDisposable();
-        loadingPanel = new JBLoadingPanel(new BorderLayout(), disposable);
 
+        JPanel settingsPanel = new OpenSettingsPanel(project);
+
+        JPanel infoPanel = JBUI.Panels.simplePanel(); // TODO remove soon
+        CollectionListModel<Build> listModel = new CollectionListModel<>();
+        BuildListLoader listLoader = new BuildListLoader(listModel, infoPanel, settings);
+
+        // View
+        BorderLayoutPanel content = JBUI.Panels.simplePanel();
+        loadingPanel = new CircleCILoadingPanel(disposable, content, listLoader);
+
+        // View logic
         if (settings.serverUrl == null || settings.token == null) {
             windowContent.setContent(settingsPanel);
         } else {
@@ -59,19 +59,8 @@ public class CircleCIToolWindow {
             windowContent.setContent(loadingPanel);
         });
 
-
-        BorderLayoutPanel content = JBUI.Panels.simplePanel();
-        ProgressStripe progressStripe = new ProgressStripe(content, disposable, ProgressWindow.DEFAULT_PROGRESS_DIALOG_POSTPONE_TIME_MILLIS);
-        loadingPanel.add(progressStripe);
-
-        JPanel infoPanel = JBUI.Panels.simplePanel();
-        CollectionListModel<Build> listModel = new CollectionListModel<>();
-        BuildListLoader listLoader = new BuildListLoader(listModel, loadingPanel, progressStripe, infoPanel, settings);
-
-
-        JBList<Build> list = new JBList<>(listModel);
-        list.setEmptyText("No Builds");
-        list.setCellRenderer(new BuildListCellRenderer());
+        JBList<Build> list = new BuildList(listModel);
+        // This is not really view
         list.setDataProvider(dataId -> {
             if (dataId.equals(CircleCIDataKeys.listSelectedBuildKey.getName())) {
                 return list.getSelectedValue();
@@ -81,22 +70,13 @@ public class CircleCIToolWindow {
                 return null;
             }
         });
-        PopupHandler popupHandler = new PopupHandler() {
-            @Override
-            public void invokePopup(Component comp, int x, int y) {
-                ActionPopupMenu popupMenu = actionManager
-                        .createActionPopupMenu("CircleCIBuildListPopup",
-                                (DefaultActionGroup) actionManager.getAction("CircleCI.Build.ToolWindow.List.Popup"));
-                popupMenu.setTargetComponent(list);
-                popupMenu.getComponent().show(comp, x, y);
-            }
-        };
-        list.addMouseListener(popupHandler);
 
         ActionToolbar toolbar = actionManager.createActionToolbar("CircleCI Toolbar",
                 (DefaultActionGroup) actionManager.getAction("CircleCI.toolbar"), true);
         toolbar.setTargetComponent(list);
 
+
+        // Info panel extraction to a class
         JEditorPane jEditorPane = new JEditorPane();
         jEditorPane.setFocusable(false);
         jEditorPane.setEditable(false);
@@ -130,14 +110,7 @@ public class CircleCIToolWindow {
         content.addToTop(wrapper);
 
         ScrollingUtil.installActions(list);
-        JScrollPane scrollPane = ScrollPaneFactory.createScrollPane(list,
-                ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-                ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.getVerticalScrollBar().getModel().addChangeListener(e -> {
-            if (listModel.getSize() > 0 && isScrollAtThreshold(scrollPane)) {
-                listLoader.load(more());
-            }
-        });
+        JScrollPane scrollPane = new ScrollPane(list, listLoader);
         content.addToCenter(scrollPane);
 
         JobScheduler.getScheduler().scheduleWithFixedDelay(() -> {
@@ -148,24 +121,8 @@ public class CircleCIToolWindow {
         }, 5, 15, TimeUnit.SECONDS);
 
         if (settings.activeProject != null) {
-            listLoader.load(refresh());
+            listLoader.load(reload());
         }
-    }
-
-    private boolean isScrollAtThreshold(JScrollPane scrollPane) {
-        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
-        int visibleAmount = verticalScrollBar.getVisibleAmount();
-        int value = verticalScrollBar.getValue();
-        float maximum = verticalScrollBar.getMaximum() * 1.0f;
-        if (maximum == 0) {
-            return false;
-        }
-        float scrollFraction = (visibleAmount + value) / maximum;
-        if (scrollFraction < 0.80) {
-            return false;
-        }
-
-        return true;
     }
 
     public JPanel getContent() {
