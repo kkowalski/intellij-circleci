@@ -1,5 +1,6 @@
 package com.circleci.ui;
 
+import com.circleci.ActiveProjectChangeEvent;
 import com.circleci.CircleCIEvents;
 import com.circleci.CircleCISettings;
 import com.circleci.api.JSON;

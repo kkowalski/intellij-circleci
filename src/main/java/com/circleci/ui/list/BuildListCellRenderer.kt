@@ -1,6 +1,7 @@
-package com.circleci.ui
+package com.circleci.ui.list
 
 import com.circleci.api.model.Build
+import com.circleci.ui.CircleCIIcons
 import com.intellij.icons.AllIcons
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil

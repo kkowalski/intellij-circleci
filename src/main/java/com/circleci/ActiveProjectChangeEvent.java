@@ -1,4 +1,4 @@
-package com.circleci.ui;
+package com.circleci;
 
 import com.circleci.api.model.Project;
 

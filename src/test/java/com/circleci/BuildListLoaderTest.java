@@ -20,7 +20,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
         LinkedList<Build> fetchedBuilds = new LinkedList<>();
         fetchedBuilds.add(build(1));
 
-        listLoader.loadRequestActionAfterLoad(LoadRequests.more(999), fetchedBuilds);
+        listLoader.loadRequestActionAfterLoad(LoadRequests.more(), fetchedBuilds);
 
         assertEquals(3, listModel.getSize());
         assertEquals(listModel.getElementAt(listModel.getSize() - 1), fetchedBuilds.getLast());
@@ -37,7 +37,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
         fetchedBuilds.add(build(2));
         fetchedBuilds.add(build(1));
 
-        listLoader.loadRequestActionAfterLoad(LoadRequests.more(999), fetchedBuilds);
+        listLoader.loadRequestActionAfterLoad(LoadRequests.more(), fetchedBuilds);
 
         assertEquals(3, listModel.getSize());
         assertEquals(listModel.getElementAt(listModel.getSize() - 1), fetchedBuilds.getLast());
@@ -54,7 +54,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
         fetchedBuilds.add(build(3));
         fetchedBuilds.add(build(2));
 
-        listLoader.loadRequestActionAfterLoad(LoadRequests.more(999), fetchedBuilds);
+        listLoader.loadRequestActionAfterLoad(LoadRequests.more(), fetchedBuilds);
 
         assertEquals(2, listModel.getSize());
         assertEquals(listModel.getElementAt(listModel.getSize() - 1), fetchedBuilds.getLast());
@@ -72,7 +72,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
 
     @NotNull
     private BuildListLoader listLoader(CollectionListModel<Build> listModel) {
-        return new BuildListLoader(listModel, null, null, null, null);
+        return new BuildListLoader(listModel, null, null);
     }
 
 }

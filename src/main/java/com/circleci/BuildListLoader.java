@@ -13,8 +13,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.CollectionListModel;
-import com.intellij.ui.components.JBLoadingPanel;
-import com.intellij.vcs.log.ui.frame.ProgressStripe;
+import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -32,8 +31,6 @@ public class BuildListLoader {
     private static final Logger LOG = Logger.getInstance(BuildListLoader.class);
 
     private CollectionListModel<Build> listModel;
-    private JBLoadingPanel loadingPanel;
-    private ProgressStripe progressStripe;
     private JPanel infoPanel;
 
     private CircleCISettings settings;
@@ -42,11 +39,11 @@ public class BuildListLoader {
     private List<Build> lastCheckBuilds;
     private Project lastActiveProject;
 
-    public BuildListLoader(CollectionListModel<Build> listModel, JBLoadingPanel loadingPanel,
-                           ProgressStripe progressStripe, JPanel infoPanel, CircleCISettings settings) {
+    private EventDispatcher<LoadingListener> eventDispatcher = EventDispatcher.create(LoadingListener.class);
+
+    public BuildListLoader(CollectionListModel<Build> listModel,
+                           JPanel infoPanel, CircleCISettings settings) {
         this.listModel = listModel;
-        this.loadingPanel = loadingPanel;
-        this.progressStripe = progressStripe;
         this.infoPanel = infoPanel;
         this.settings = settings;
 
@@ -57,7 +54,7 @@ public class BuildListLoader {
                         listModel.removeAll();
                     }
                     settings.activeProject = event.getCurrent();
-                    load(LoadRequests.refresh());
+                    load(LoadRequests.reload());
                 });
     }
 
@@ -68,7 +65,7 @@ public class BuildListLoader {
 
         if (!loading) {
             loading = true;
-            updateUIOnLoadingStarted(loadRequest);
+            eventDispatcher.getMulticaster().loadingStarted(loadRequest instanceof ReloadRequest);
 
             JobScheduler.getScheduler().schedule(() -> {
                 Instant start = Instant.now();
@@ -94,7 +91,7 @@ public class BuildListLoader {
                             "Error loading builds", e.getMessage(), NotificationType.ERROR));
                 } finally {
                     loading = false;
-                    updateUIAfterLoadingFinished();
+                    eventDispatcher.getMulticaster().loadingFinished();
 
                     Instant end = Instant.now();
                     LOG.debug("Fetching builds time : " + Duration.between(start, end).getNano() / 1000_1000 + "ms");
@@ -108,7 +105,7 @@ public class BuildListLoader {
         GetBuildsRequestParameters buildsRequestParameters;
         if (loadRequest instanceof MoreRequest) {
             buildsRequestParameters = getBuildsRequestParameters(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 10);
-        } else if (loadRequest instanceof RefreshRequest) {
+        } else if (loadRequest instanceof ReloadRequest) {
             buildsRequestParameters = getBuildsRequestParameters(0, 25);
         } else {
             buildsRequestParameters = getBuildsRequestParameters(0, Math.min(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 100));
@@ -125,18 +122,6 @@ public class BuildListLoader {
 
     private boolean mergeRequestWithFreshCheckData(LoadRequest loadRequest, Build latest) {
         return loadRequest instanceof MergeRequest && lastCheckBuilds != null && latest.getBuildNumber().equals(lastCheckBuilds.get(0).getBuildNumber());
-    }
-
-    private void updateUIOnLoadingStarted(LoadRequest loadRequest) {
-        if (loadRequest instanceof RefreshRequest) {
-            loadingPanel.startLoading();
-        }
-        progressStripe.startLoading();
-    }
-
-    private void updateUIAfterLoadingFinished() {
-        loadingPanel.stopLoading();
-        progressStripe.stopLoading();
     }
 
     public void loadRequestActionAfterLoad(LoadRequest loadRequest, List<Build> builds) {
@@ -160,7 +145,7 @@ public class BuildListLoader {
                     lastCheckBuilds = builds;
                 }
             }
-            
+
             lastActiveProject = settings.activeProject;
         } else if (loadRequest instanceof MergeRequest) {
             if (lastActiveProject != settings.activeProject) {
@@ -204,4 +189,9 @@ public class BuildListLoader {
                 settings.activeProject.organization, settings.activeProject.name,
                 limit, offset);
     }
+
+    public void addLoadingListener(LoadingListener listener) {
+        eventDispatcher.addListener(listener);
+    }
+
 }

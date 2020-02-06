@@ -1,6 +1,5 @@
 package com.circleci;
 
-import com.circleci.ui.ActiveProjectChangeEvent;
 import com.intellij.util.messages.Topic;
 
 public class CircleCIEvents {

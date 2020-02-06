@@ -11,6 +11,6 @@ public class RefreshDataAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         BuildListLoader listLoader = e.getDataContext().getData(CircleCIDataKeys.listLoaderKey);
-        listLoader.load(LoadRequests.refresh());
+        listLoader.load(LoadRequests.reload());
     }
 }
