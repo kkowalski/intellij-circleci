@@ -13,4 +13,4 @@ jobs:
       - checkout
       - run:
           name: Run tests
-          command: ./gradlew test
+          command: gradle test
