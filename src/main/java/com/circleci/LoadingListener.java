@@ -11,5 +11,4 @@ public interface LoadingListener extends EventListener {
     void loadingStarted(boolean reload);
 
     void loadingFinished();
-
 }

@@ -16,7 +16,6 @@ import com.intellij.ui.CollectionListModel;
 import com.intellij.util.EventDispatcher;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
@@ -31,20 +30,18 @@ public class BuildListLoader {
     private static final Logger LOG = Logger.getInstance(BuildListLoader.class);
 
     private CollectionListModel<Build> listModel;
-    private JPanel infoPanel;
-
     private CircleCISettings settings;
 
     private boolean loading = false;
-    private List<Build> lastCheckBuilds;
-    private Project lastActiveProject;
 
     private EventDispatcher<LoadingListener> eventDispatcher = EventDispatcher.create(LoadingListener.class);
 
-    public BuildListLoader(CollectionListModel<Build> listModel,
-                           JPanel infoPanel, CircleCISettings settings) {
+    private List<Build> lastCheckBuilds;
+    private Project lastActiveProject;
+    private EventDispatcher<CheckingListener> eventDispatcherChecking = EventDispatcher.create(CheckingListener.class);
+
+    public BuildListLoader(CollectionListModel<Build> listModel, CircleCISettings settings) {
         this.listModel = listModel;
-        this.infoPanel = infoPanel;
         this.settings = settings;
 
         ApplicationManager.getApplication().getMessageBus()
@@ -125,14 +122,14 @@ public class BuildListLoader {
     }
 
     public void loadRequestActionAfterLoad(LoadRequest loadRequest, List<Build> builds) {
-        if (loadRequest instanceof CheckRequest) {
+        if (loadRequest instanceof CheckRequest) { // TODO extract to checker Checker
             if (builds.size() == 0) {
                 return;
             }
 
             // we have new head of the list
             if (!builds.get(0).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
-                infoPanel.setVisible(true);
+                eventDispatcherChecking.getMulticaster().listUpdated(builds);
                 lastCheckBuilds = builds;
                 lastActiveProject = settings.activeProject;
                 return;
@@ -141,7 +138,7 @@ public class BuildListLoader {
             // checking if status of any of the builds changed
             for (int i = 0; i < builds.size(); i++) {
                 if (!builds.get(i).getStatus().equals(listModel.getItems().get(i).getStatus())) {
-                    infoPanel.setVisible(true);
+                    eventDispatcherChecking.getMulticaster().listUpdated(builds);
                     lastCheckBuilds = builds;
                 }
             }
@@ -167,8 +164,6 @@ public class BuildListLoader {
                 oldBuilds.get(i).setStatus(builds.get(i).getStatus());
                 i++;
             }
-
-            infoPanel.setVisible(false);
         } else if (loadRequest instanceof MoreRequest) {
             Build lastLocalBuild = listModel.getElementAt(listModel.getSize() - 1);
             int lastLocalPositionInFetched = builds.indexOf(lastLocalBuild);
@@ -178,7 +173,6 @@ public class BuildListLoader {
                 listModel.add(builds.subList(lastLocalPositionInFetched + 1, builds.size()));
             }
         } else {
-            infoPanel.setVisible(false);
             listModel.removeAll();
             listModel.add(builds);
         }
@@ -192,6 +186,11 @@ public class BuildListLoader {
 
     public void addLoadingListener(LoadingListener listener) {
         eventDispatcher.addListener(listener);
+    }
+
+    // TODO extract to checker Checker
+    public void addCheckingListener(CheckingListener listener) {
+        eventDispatcherChecking.addListener(listener);
     }
 
 }

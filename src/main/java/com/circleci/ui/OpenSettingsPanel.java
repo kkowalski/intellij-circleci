@@ -7,7 +7,7 @@ import com.intellij.util.ui.components.BorderLayoutPanel;
 
 import javax.swing.*;
 
-public class OpenSettingsPanel extends BorderLayoutPanel {
+class OpenSettingsPanel extends BorderLayoutPanel {
 
     public OpenSettingsPanel(Project project) {
         LinkLabel<?> linkLabel = LinkLabel.create("Open Settings", () -> {

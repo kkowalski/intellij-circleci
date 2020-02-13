@@ -18,7 +18,7 @@ public class BuildList extends JBList<Build> {
 
         setEmptyText("No Builds available");
         setCellRenderer(new BuildListCellRenderer());
-        BuildList list = this;
+
         ActionManager actionManager = ActionManager.getInstance();
         PopupHandler popupHandler = new PopupHandler() {
             @Override
@@ -26,10 +26,11 @@ public class BuildList extends JBList<Build> {
                 ActionPopupMenu popupMenu = actionManager
                         .createActionPopupMenu("CircleCIBuildListPopup",
                                 (DefaultActionGroup) actionManager.getAction("CircleCI.Build.ToolWindow.List.Popup"));
-                popupMenu.setTargetComponent(list);
+                popupMenu.setTargetComponent(BuildList.this);
                 popupMenu.getComponent().show(comp, x, y);
             }
         };
         addMouseListener(popupHandler);
     }
+
 }

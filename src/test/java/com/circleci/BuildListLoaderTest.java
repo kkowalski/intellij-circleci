@@ -72,7 +72,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
 
     @NotNull
     private BuildListLoader listLoader(CollectionListModel<Build> listModel) {
-        return new BuildListLoader(listModel, null, null);
+        return new BuildListLoader(listModel, null);
     }
 
 }
