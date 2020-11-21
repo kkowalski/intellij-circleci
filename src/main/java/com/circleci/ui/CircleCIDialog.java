@@ -46,9 +46,10 @@ public class CircleCIDialog extends DialogWrapper {
         project.requestFocus();
 
         settings = CircleCISettings.getInstance();
-        restoreFromSettings();
 
         provider.setModel(new CollectionComboBoxModel<>(Arrays.asList("Github", "Bitbucket")));
+
+        restoreFromSettings();
 
         setOKActionEnabled(false);
 
@@ -93,8 +94,6 @@ public class CircleCIDialog extends DialogWrapper {
 
     private void restoreFromSettings() {
         organization.setText(settings.defaultOrganization);
-        provider.setSelectedItem(settings.defaultProvider);
-
         if ("Github".equals(settings.defaultProvider)) {
             provider.setSelectedItem("Github");
         } else {
