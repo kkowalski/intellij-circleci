@@ -8,15 +8,22 @@ buildscript {
 }
 
 plugins {
-    id 'org.jetbrains.intellij' version '0.4.15'
+    id 'org.jetbrains.intellij' version '0.6.4'
 }
 apply plugin: 'java'
+apply plugin: 'idea'
 apply plugin: 'kotlin'
 
-group 'com.circleci'
-version '0.0.12'
+group pluginGroup
+version pluginVersion
 
-sourceCompatibility = 1.8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+//  options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
 
 repositories {
     mavenCentral()
@@ -31,14 +38,12 @@ dependencies {
 //    jvmTarget = '1.8'
 //}
 
-//publishPlugin {
-//    token intellijPublishToken
-//}
 
-// See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     pluginName = "intellij-circleci"
-    version '2019.3.1'
+
+    version ideaVersion
+    println "Building for IntelliJ version: ${version}"
 }
 
 patchPluginXml {
@@ -55,6 +60,6 @@ buildPlugin {
 }
 
 publishPlugin {
-
+    token System.getenv('circleciPlugin_intellijPublishToken')
     channels 'alpha'
 }

@@ -3,14 +3,17 @@ version: 2.1
 workflows:
   ci:
     jobs:
-      - test
+      - build-and-test
 
 jobs:
-  test:
+  build-and-test:
     docker:
-      - image: gradle:6.0-jdk8
+      - image: gradle:6.7-jdk11
     steps:
       - checkout
       - run:
           name: Run tests
           command: gradle test
+      - run:
+          name: Build plugin
+          command: gradle buildPlugin
