@@ -17,7 +17,7 @@ public class CircleCIToolWindowFactory implements ToolWindowFactory {
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         Disposable disposable = Disposer.newDisposable();
-        CircleCIToolWindow circleCiToolWindow = new CircleCIToolWindow(toolWindow, disposable);
+        CircleCIToolWindow circleCiToolWindow = new CircleCIToolWindow(project, toolWindow, disposable);
         circleCiToolWindow.init(project);
         ContentManager contentManager = toolWindow.getContentManager();
         Content content = contentManager.getFactory().createContent(circleCiToolWindow, "", false);

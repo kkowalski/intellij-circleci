@@ -21,7 +21,7 @@
           <text value="Organization:"/>
         </properties>
       </component>
-      <component id="45db3" class="javax.swing.JTextField" binding="organization" default-binding="true">
+      <component id="45db3" class="javax.swing.JTextField" binding="organizationField" default-binding="true">
         <constraints>
           <grid row="0" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="200" height="-1"/>
@@ -40,7 +40,7 @@
           <text value="Provider:"/>
         </properties>
       </component>
-      <component id="cfef6" class="com.intellij.openapi.ui.ComboBox" binding="provider">
+      <component id="cfef6" class="com.intellij.openapi.ui.ComboBox" binding="providerComboBox">
         <constraints>
           <grid row="2" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="2" anchor="8" fill="0" indent="0" use-parent-layout="false">
             <preferred-size width="150" height="-1"/>
@@ -48,7 +48,7 @@
         </constraints>
         <properties/>
       </component>
-      <component id="665df" class="javax.swing.JTextField" binding="project">
+      <component id="665df" class="javax.swing.JTextField" binding="projectField">
         <constraints>
           <grid row="1" column="1" row-span="1" col-span="4" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
             <preferred-size width="150" height="-1"/>

@@ -16,6 +16,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.circleci.CircleCISettings"/>
+        <projectService serviceImplementation="com.circleci.CircleCIProjectSettings"/>
         <toolWindow id="CircleCI" icon="/icons/toolbox_logo.svg" anchor="right"
                     factoryClass="com.circleci.CircleCIToolWindowFactory"/>
         <projectConfigurable groupId="tools" instance="com.circleci.ui.CircleCIProjectsConfigurable"
@@ -23,20 +24,15 @@
         <notificationGroup id="CircleCI" displayType="BALLOON"/>
     </extensions>
     <actions>
-        <group id="CircleCI.toolbar">
-            <action id="CircleCI.RefreshData"
-                    class="com.circleci.actions.RefreshDataAction"
-                    icon="AllIcons.Actions.Refresh"/>
-            <action id="CircleCI.AddProject"
-                    class="com.circleci.actions.AddProjectDialog"
-                    icon="AllIcons.General.Add"/>
-            <action id="CircleCI.projectPicker"
-                    class="com.circleci.actions.CircleCIProjectComboBox"/>
-            <action id="CircleCI.Settings"
-                    class="com.circleci.actions.OpenSettingsDialog"
-                    icon="AllIcons.General.Settings"/>
-            <separator/>
-        </group>
+        <action id="CircleCI.RefreshData"
+                class="com.circleci.actions.RefreshDataAction"
+                icon="AllIcons.Actions.Refresh"/>
+        <action id="CircleCI.AddProject"
+                class="com.circleci.actions.AddProjectDialog"
+                icon="AllIcons.General.Add"/>
+        <action id="CircleCI.Settings"
+                class="com.circleci.actions.OpenSettingsDialog"
+                icon="AllIcons.General.Settings"/>
         <group id="CircleCI.Build.ToolWindow.List.Popup">
             <action id="CircleCI.Build.List.OpenBuild" icon="/icons/menu_icon.svg"
                     class="com.circleci.actions.OpenBuild"/>

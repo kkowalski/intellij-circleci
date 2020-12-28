@@ -31,11 +31,6 @@ dependencies {
     compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.10.1'
 }
 
-//kotlinOptions {
-//    jvmTarget = '1.8'
-//}
-
-
 intellij {
     pluginName = "intellij-circleci"
 
