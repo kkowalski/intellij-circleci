@@ -7,8 +7,8 @@ import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.*;
 import com.intellij.ui.components.JBList;
@@ -22,31 +22,33 @@ import java.util.concurrent.TimeUnit;
 
 import static com.circleci.LoadRequests.*;
 
-public class CircleCIToolWindow {
+public class CircleCIToolWindow extends SimpleToolWindowPanel {
+
     private CircleCISettings settings = CircleCISettings.getInstance();
-    private SimpleToolWindowPanel windowContent = new SimpleToolWindowPanel(true);
+    private Disposable parentDisposable;
 
-    public CircleCIToolWindow(ToolWindow toolWindow, com.intellij.openapi.project.Project project) {
-        Disposable disposable = Disposer.newDisposable();
+    public CircleCIToolWindow(ToolWindow toolWindow, Disposable parentDisposable) {
+        super(true);
+        this.parentDisposable = parentDisposable;
+    }
 
+    public void init(Project project) {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        BuildListLoader listLoader = new BuildListLoader(listModel, settings);
+        ListLoader listLoader = new ListLoader(listModel, settings);
 
         BorderLayoutPanel content = JBUI.Panels.simplePanel();
-        JBLoadingPanel loadingPanel = new LoadingPanel(disposable, content, listLoader);
+        JBLoadingPanel loadingPanel = new LoadingPanel(parentDisposable, content, listLoader);
         JPanel openSettingsPanel = new OpenSettingsPanel(project);
-        if (settings.serverUrl == null || settings.token == null) {
-            windowContent.setContent(openSettingsPanel);
-        } else {
-            windowContent.setContent(loadingPanel);
-        }
+
+        openSettingsPanelIfNotConfigured(loadingPanel, openSettingsPanel);
+
         ApplicationManager.getApplication().getMessageBus()
                 .connect().subscribe(CircleCIEvents.SETTINGS_UPDATED_TOPIC, state -> {
             if ("".equals(settings.token) || "".equals(settings.serverUrl)) {
                 return;
             }
-            windowContent.removeAll();
-            windowContent.setContent(loadingPanel);
+            removeAll();
+            setContent(loadingPanel);
         });
 
         JBList<Build> list = new BuildList(listModel);
@@ -88,7 +90,11 @@ public class CircleCIToolWindow {
         }
     }
 
-    public JPanel getContent() {
-        return windowContent;
+    private void openSettingsPanelIfNotConfigured(JBLoadingPanel loadingPanel, JPanel openSettingsPanel) {
+        if (settings.serverUrl == null || settings.token == null) {
+            setContent(openSettingsPanel);
+        } else {
+            setContent(loadingPanel);
+        }
     }
 }

@@ -25,9 +25,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Chris Kowalski
  */
-public class BuildListLoader {
+public class ListLoader {
 
-    private static final Logger LOG = Logger.getInstance(BuildListLoader.class);
+    private static final Logger LOG = Logger.getInstance(ListLoader.class);
 
     private CollectionListModel<Build> listModel;
     private CircleCISettings settings;
@@ -40,7 +40,7 @@ public class BuildListLoader {
     private Project lastActiveProject;
     private EventDispatcher<CheckingListener> eventDispatcherChecking = EventDispatcher.create(CheckingListener.class);
 
-    public BuildListLoader(CollectionListModel<Build> listModel, CircleCISettings settings) {
+    public ListLoader(CollectionListModel<Build> listModel, CircleCISettings settings) {
         this.listModel = listModel;
         this.settings = settings;
 

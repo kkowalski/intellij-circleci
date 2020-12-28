@@ -1,6 +1,6 @@
 package com.circleci.ui;
 
-import com.circleci.BuildListLoader;
+import com.circleci.ListLoader;
 import com.circleci.LoadingListener;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.progress.util.ProgressWindow;
@@ -13,13 +13,13 @@ import java.awt.*;
 
 class LoadingPanel extends JBLoadingPanel {
 
-    public LoadingPanel(@NotNull Disposable parent, JComponent content, BuildListLoader buildListLoader) {
+    public LoadingPanel(Disposable parent, JComponent content, ListLoader listLoader) {
         super(new BorderLayout(), parent);
 
         ProgressStripe progressStripe = new ProgressStripe(content, parent, ProgressWindow.DEFAULT_PROGRESS_DIALOG_POSTPONE_TIME_MILLIS);
         add(progressStripe);
 
-        buildListLoader.addLoadingListener(new LoadingListener() {
+        listLoader.addLoadingListener(new LoadingListener() {
             @Override
             public void loadingStarted(boolean reload) {
                 if (reload) {
