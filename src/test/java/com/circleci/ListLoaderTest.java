@@ -8,11 +8,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.LinkedList;
 
 
-public class BuildListLoaderTest extends BasePlatformTestCase {
+public class ListLoaderTest extends BasePlatformTestCase {
 
     public void testAppendingOnMoreLocalAndServerStateConsistant() {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        BuildListLoader listLoader = listLoader(listModel);
+        ListLoader listLoader = listLoader(listModel);
 
         listModel.add(build(3));
         listModel.add(build(2));
@@ -28,7 +28,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
 
     public void testAppendingOnMoreServerWithNewBuilds() {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        BuildListLoader listLoader = listLoader(listModel);
+        ListLoader listLoader = listLoader(listModel);
 
         listModel.add(build(3));
         listModel.add(build(2));
@@ -45,7 +45,7 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
 
     public void testAppendingOnMoreServerWithNewBuildsShiftedSoNothingToAppend() {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        BuildListLoader listLoader = listLoader(listModel);
+        ListLoader listLoader = listLoader(listModel);
 
         listModel.add(build(3));
         listModel.add(build(2));
@@ -71,8 +71,8 @@ public class BuildListLoaderTest extends BasePlatformTestCase {
 
 
     @NotNull
-    private BuildListLoader listLoader(CollectionListModel<Build> listModel) {
-        return new BuildListLoader(listModel, null);
+    private ListLoader listLoader(CollectionListModel<Build> listModel) {
+        return new ListLoader(listModel, null);
     }
 
 }

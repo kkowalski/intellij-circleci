@@ -1,6 +1,6 @@
 package com.circleci.ui;
 
-import com.circleci.BuildListLoader;
+import com.circleci.ListLoader;
 import com.circleci.api.model.Build;
 import com.intellij.ui.ScrollingUtil;
 import com.intellij.ui.components.JBList;
@@ -12,7 +12,7 @@ import static com.circleci.LoadRequests.more;
 
 class ScrollPanel extends JBScrollPane {
 
-    public ScrollPanel(JBList<Build> list, BuildListLoader listLoader) {
+    public ScrollPanel(JBList<Build> list, ListLoader listLoader) {
         setViewportView(list);
         setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

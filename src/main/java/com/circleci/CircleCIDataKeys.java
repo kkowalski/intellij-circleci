@@ -10,7 +10,7 @@ import com.intellij.ui.CollectionComboBoxModel;
  */
 public class CircleCIDataKeys {
 
-    public static DataKey<BuildListLoader> listLoaderKey = DataKey.create("circleci.buildlist.loader");
+    public static DataKey<ListLoader> listLoaderKey = DataKey.create("circleci.buildlist.loader");
     public static DataKey<Build> listSelectedBuildKey = DataKey.create("circleci.buildlist.selected");
     public static DataKey<CollectionComboBoxModel<String>> projectListModelKey = DataKey.create("circleci.projectlist.model");
     public static DataKey<RequestExecutor> requestExecutorKey = DataKey.create("circleci.request.executor");

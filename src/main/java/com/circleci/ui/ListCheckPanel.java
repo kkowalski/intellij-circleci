@@ -1,6 +1,6 @@
 package com.circleci.ui;
 
-import com.circleci.BuildListLoader;
+import com.circleci.ListLoader;
 import com.circleci.LoadingListener;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
@@ -15,7 +15,7 @@ import static com.circleci.LoadRequests.merge;
 
 class ListCheckPanel extends BorderLayoutPanel {
 
-    public ListCheckPanel(BuildListLoader listLoader) {
+    public ListCheckPanel(ListLoader listLoader) {
         setOpaque(true);
         setVisible(false);
 

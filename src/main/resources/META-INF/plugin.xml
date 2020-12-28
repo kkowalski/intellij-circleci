@@ -19,8 +19,8 @@
         <toolWindow id="CircleCI" icon="/icons/toolbox_logo.svg" anchor="right"
                     factoryClass="com.circleci.CircleCIToolWindowFactory"/>
         <projectConfigurable groupId="tools" instance="com.circleci.ui.CircleCIProjectsConfigurable"
-                             id="circleci" displayName="CircleCI" nonDefaultProject="true">
-        </projectConfigurable>
+                             id="circleci" displayName="CircleCI" nonDefaultProject="true"/>
+        <notificationGroup id="CircleCI" displayType="BALLOON"/>
     </extensions>
     <actions>
         <group id="CircleCI.toolbar">
