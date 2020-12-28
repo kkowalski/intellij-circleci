@@ -24,15 +24,12 @@
         <notificationGroup id="CircleCI" displayType="BALLOON"/>
     </extensions>
     <actions>
-        <action id="CircleCI.RefreshData"
-                class="com.circleci.actions.RefreshDataAction"
-                icon="AllIcons.Actions.Refresh"/>
+        <action id="CircleCI.Refresh"
+                class="com.circleci.actions.RefreshAction"/>
         <action id="CircleCI.AddProject"
-                class="com.circleci.actions.AddProjectDialog"
-                icon="AllIcons.General.Add"/>
-        <action id="CircleCI.Settings"
-                class="com.circleci.actions.OpenSettingsDialog"
-                icon="AllIcons.General.Settings"/>
+                class="com.circleci.actions.AddProjectDialog"/>
+        <action id="CircleCI.OpenSettings"
+                class="com.circleci.actions.OpenSettingsDialog"/>
         <group id="CircleCI.Build.ToolWindow.List.Popup">
             <action id="CircleCI.Build.List.OpenBuild" icon="/icons/menu_icon.svg"
                     class="com.circleci.actions.OpenBuild"/>
