@@ -94,11 +94,11 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
     private ActionToolbar createToolbar(Project project) {
         ActionManager actionManager = ActionManager.getInstance();
         final DefaultActionGroup actionGroup = new DefaultActionGroup();
-        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.RefreshData"));
+        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.Refresh"));
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.AddProject"));
         CircleCIProjectComboBox projectPicker = new CircleCIProjectComboBox(project);
         actionGroup.add(projectPicker);
-        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.Settings"));
+        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.OpenSettings"));
         actionGroup.addSeparator();
 
         return actionManager.createActionToolbar("CircleCI Toolbar",
