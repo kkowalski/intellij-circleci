@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class AddProjectDialog extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
-        final CircleCIDialog dialog = new CircleCIDialog(e.getDataContext());
+        final CircleCIDialog dialog = new CircleCIDialog(e.getProject());
         dialog.showAndGet();
     }
 

@@ -2,6 +2,7 @@ package com.circleci.ui;
 
 import com.circleci.ActiveProjectChangeEvent;
 import com.circleci.CircleCIEvents;
+import com.circleci.CircleCIProjectSettings;
 import com.circleci.CircleCISettings;
 import com.circleci.api.JSON;
 import com.circleci.api.model.Project;
@@ -13,8 +14,6 @@ import com.intellij.concurrency.JobScheduler;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
-import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.ui.CollectionComboBoxModel;
@@ -30,36 +29,39 @@ import java.util.concurrent.TimeUnit;
 
 public class CircleCIDialog extends DialogWrapper {
     private JPanel mainPanel;
-    private JTextField organization;
-    private ComboBox<String> provider;
-    private JTextField project;
+    private JTextField organizationField;
+    private ComboBox<String> providerComboBox;
+    public JTextField projectField;
     private JLabel projectStatusLabel;
     private JButton checkProjectButton;
 
     private CircleCISettings settings;
+    private CircleCIProjectSettings projectSettings;
+    private com.intellij.openapi.project.Project projectIntellij;
 
-    public CircleCIDialog(DataContext dataContext) {
+
+    public CircleCIDialog(com.intellij.openapi.project.Project projectIntellij) {
         super(true); // use current window as parent
         setTitle("Add CircleCI Project");
         init();
-
-        project.requestFocus();
+        this.projectIntellij = projectIntellij;
 
         settings = CircleCISettings.getInstance();
+        projectSettings = CircleCIProjectSettings.getInstance(projectIntellij);
 
-        provider.setModel(new CollectionComboBoxModel<>(Arrays.asList("Github", "Bitbucket")));
+        providerComboBox.setModel(new CollectionComboBoxModel<>(Arrays.asList("Github", "Bitbucket")));
 
         restoreFromSettings();
 
         setOKActionEnabled(false);
 
-        organization.addKeyListener(new ProjectNameListener());
-        project.addKeyListener(new ProjectNameListener());
+        organizationField.addKeyListener(new ProjectNameListener());
+        projectField.addKeyListener(new ProjectNameListener());
 
         checkProjectButton.setEnabled(false);
         checkProjectButton.addActionListener(event -> {
-            if (!"".equals(organization.getText()) && !"".equals(project.getText())) {
-                Project proj = new Project(organization.getText(), project.getText(), (String) provider.getSelectedItem());
+            if (!"".equals(organizationField.getText()) && !"".equals(projectField.getText())) {
+                Project proj = new Project(organizationField.getText(), projectField.getText(), (String) providerComboBox.getSelectedItem());
                 if (alreadyAdded(proj)) {
                     projectStatusLabel.setText("Already added.");
                     projectStatusLabel.setForeground(JBColor.red);
@@ -93,11 +95,11 @@ public class CircleCIDialog extends DialogWrapper {
     }
 
     private void restoreFromSettings() {
-        organization.setText(settings.defaultOrganization);
+        organizationField.setText(settings.defaultOrganization);
         if ("Github".equals(settings.defaultProvider)) {
-            provider.setSelectedItem("Github");
+            providerComboBox.setSelectedItem("Github");
         } else {
-            provider.setSelectedItem("Bitbucket");
+            providerComboBox.setSelectedItem("Bitbucket");
         }
     }
 
@@ -109,14 +111,13 @@ public class CircleCIDialog extends DialogWrapper {
 
     @Override
     protected void doOKAction() {
-        Project project = new Project(this.organization.getText(),
-                this.project.getText(), (String) provider.getSelectedItem());
-        settings.projects.add(project);
+        Project project = new Project(this.organizationField.getText(),
+                projectField.getText(), (String) providerComboBox.getSelectedItem());
+        projectSettings.projects.add(project);
 
-        ApplicationManager.getApplication()
-                .getMessageBus()
+        projectIntellij.getMessageBus()
                 .syncPublisher(CircleCIEvents.PROJECT_CHANGED_TOPIC)
-                .projectChanged(new ActiveProjectChangeEvent(settings.activeProject, project));
+                .projectChanged(new ActiveProjectChangeEvent(projectSettings.activeProject, project));
 
         super.doOKAction();
     }
@@ -136,7 +137,7 @@ public class CircleCIDialog extends DialogWrapper {
         @Override
         public void keyReleased(KeyEvent e) {
             setOKActionEnabled(false);
-            if (!"".equals(organization.getText()) && !"".equals(project.getText())) {
+            if (!"".equals(organizationField.getText()) && !"".equals(projectField.getText())) {
                 checkProjectButton.setEnabled(true);
             } else {
                 checkProjectButton.setEnabled(false);
@@ -145,7 +146,7 @@ public class CircleCIDialog extends DialogWrapper {
     }
 
     boolean alreadyAdded(Project project) {
-        return settings.projects.contains(project);
+        return projectSettings.projects.contains(project);
     }
 
 }

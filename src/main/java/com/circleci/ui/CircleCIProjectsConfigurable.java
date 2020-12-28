@@ -2,6 +2,7 @@ package com.circleci.ui;
 
 import com.circleci.ActiveProjectChangeEvent;
 import com.circleci.CircleCIEvents;
+import com.circleci.CircleCIProjectSettings;
 import com.circleci.CircleCISettings;
 import com.circleci.api.JSON;
 import com.circleci.api.model.Me;
@@ -42,11 +43,16 @@ public class CircleCIProjectsConfigurable implements Configurable {
     private JBList<Project> projectList;
 
     private CircleCISettings settings;
+    private CircleCIProjectSettings projectSettings;
 
-    public CircleCIProjectsConfigurable() {
+    private com.intellij.openapi.project.Project projectIntellij;
+
+    public CircleCIProjectsConfigurable(com.intellij.openapi.project.Project projectIntellij) {
         settings = CircleCISettings.getInstance();
+        projectSettings = CircleCIProjectSettings.getInstance(projectIntellij);
+        this.projectIntellij = projectIntellij;
 
-        projectList = new JBList<>(new CollectionListModel<>(settings.projects));
+        projectList = new JBList<>(new CollectionListModel<>(projectSettings.projects));
         projectList.getEmptyText().setText("No projects");
         projectList.setCellRenderer(new ColoredListCellRenderer<Project>() {
             @Override
@@ -67,17 +73,17 @@ public class CircleCIProjectsConfigurable implements Configurable {
             Project selectedValue = projectList.getSelectedValue();
             CollectionListModel<Project> model = (CollectionListModel<Project>) projectList.getModel();
             model.remove(selectedValue);
-            settings.projects.remove(selectedValue);
+            projectSettings.projects.remove(selectedValue);
 
-            if (selectedValue.equals(settings.activeProject)) {
+            if (selectedValue.equals(projectSettings.activeProject)) {
                 Project current = null;
                 if (model.getSize() > 0) {
                     current = model.getElementAt(0);
                 }
-                ApplicationManager.getApplication()
-                        .getMessageBus()
+
+                projectIntellij.getMessageBus()
                         .syncPublisher(CircleCIEvents.PROJECT_CHANGED_TOPIC)
-                        .projectChanged(new ActiveProjectChangeEvent(settings.activeProject, current));
+                        .projectChanged(new ActiveProjectChangeEvent(projectSettings.activeProject, current));
             }
         });
 

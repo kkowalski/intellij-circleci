@@ -1,6 +1,7 @@
 package com.circleci.ui;
 
 import com.circleci.*;
+import com.circleci.actions.CircleCIProjectComboBox;
 import com.circleci.api.model.Build;
 import com.circleci.ui.list.BuildList;
 import com.intellij.concurrency.JobScheduler;
@@ -24,17 +25,20 @@ import static com.circleci.LoadRequests.*;
 
 public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
-    private CircleCISettings settings = CircleCISettings.getInstance();
+    private CircleCISettings settings;
+    private CircleCIProjectSettings projectSettings;
     private Disposable parentDisposable;
 
-    public CircleCIToolWindow(ToolWindow toolWindow, Disposable parentDisposable) {
+    public CircleCIToolWindow(Project project, ToolWindow toolWindow, Disposable parentDisposable) {
         super(true);
         this.parentDisposable = parentDisposable;
+        this.settings = CircleCISettings.getInstance();
+        this.projectSettings = CircleCIProjectSettings.getInstance(project);
     }
 
     public void init(Project project) {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListLoader listLoader = new ListLoader(listModel, settings);
+        ListLoader listLoader = new ListLoader(listModel, project);
 
         BorderLayoutPanel content = JBUI.Panels.simplePanel();
         JBLoadingPanel loadingPanel = new LoadingPanel(parentDisposable, content, listLoader);
@@ -62,9 +66,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
             }
         });
 
-        ActionManager actionManager = ActionManager.getInstance();
-        ActionToolbar toolbar = actionManager.createActionToolbar("CircleCI Toolbar",
-                (DefaultActionGroup) actionManager.getAction("CircleCI.toolbar"), true);
+        ActionToolbar toolbar = createToolbar(project);
         toolbar.setTargetComponent(list);
 
         BorderLayoutPanel wrapper = JBUI.Panels.simplePanel();
@@ -76,18 +78,31 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
         JScrollPane scrollPane = new ScrollPanel(list, listLoader);
         content.addToCenter(scrollPane);
 
-
-        // TODO extract to checker Checker
+        // This needs to be disposed
         JobScheduler.getScheduler().scheduleWithFixedDelay(() -> {
-            if (settings.activeProject == null || listModel.getSize() == 0) {
+            if (projectSettings.activeProject == null || listModel.getSize() == 0) {
                 return;
             }
             listLoader.load(check());
         }, 5, 15, TimeUnit.SECONDS);
 
-        if (settings.activeProject != null) {
+        if (projectSettings.activeProject != null) {
             listLoader.load(reload());
         }
+    }
+
+    private ActionToolbar createToolbar(Project project) {
+        ActionManager actionManager = ActionManager.getInstance();
+        final DefaultActionGroup actionGroup = new DefaultActionGroup();
+        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.RefreshData"));
+        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.AddProject"));
+        CircleCIProjectComboBox projectPicker = new CircleCIProjectComboBox(project);
+        actionGroup.add(projectPicker);
+        actionGroup.add(ActionManager.getInstance().getAction("CircleCI.Settings"));
+        actionGroup.addSeparator();
+
+        return actionManager.createActionToolbar("CircleCI Toolbar",
+                actionGroup, true);
     }
 
     private void openSettingsPanelIfNotConfigured(JBLoadingPanel loadingPanel, JPanel openSettingsPanel) {

@@ -10,7 +10,6 @@ import com.intellij.concurrency.JobScheduler;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.util.EventDispatcher;
@@ -31,6 +30,7 @@ public class ListLoader {
 
     private CollectionListModel<Build> listModel;
     private CircleCISettings settings;
+    private CircleCIProjectSettings projectSettings;
 
     private boolean loading = false;
 
@@ -40,23 +40,24 @@ public class ListLoader {
     private Project lastActiveProject;
     private EventDispatcher<CheckingListener> eventDispatcherChecking = EventDispatcher.create(CheckingListener.class);
 
-    public ListLoader(CollectionListModel<Build> listModel, CircleCISettings settings) {
+    public ListLoader(CollectionListModel<Build> listModel, com.intellij.openapi.project.Project intellijProject) {
         this.listModel = listModel;
-        this.settings = settings;
+        this.settings = CircleCISettings.getInstance();
+        this.projectSettings = CircleCIProjectSettings.getInstance(intellijProject);
 
-        ApplicationManager.getApplication().getMessageBus()
+        intellijProject.getMessageBus()
                 .connect()
                 .subscribe(CircleCIEvents.PROJECT_CHANGED_TOPIC, event -> {
                     if (event.getCurrent() == null) {
                         listModel.removeAll();
                     }
-                    settings.activeProject = event.getCurrent();
+                    projectSettings.activeProject = event.getCurrent();
                     load(LoadRequests.reload());
                 });
     }
 
     public void load(LoadRequest loadRequest) {
-        if (settings.activeProject == null) {
+        if (projectSettings.activeProject == null) {
             return;
         }
 
@@ -84,8 +85,10 @@ public class ListLoader {
                     }
                     loadRequestActionAfterLoad(loadRequest, builds);
                 } catch (Exception e) {
+                    String msg = "Error loading builds";
+                    LOG.error(msg, e);
                     Notifications.Bus.notify(new Notification("CircleCI",
-                            "Error loading builds", e.getMessage(), NotificationType.ERROR));
+                            msg, e.getMessage(), NotificationType.ERROR));
                 } finally {
                     loading = false;
                     eventDispatcher.getMulticaster().loadingFinished();
@@ -131,7 +134,7 @@ public class ListLoader {
             if (!builds.get(0).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
                 eventDispatcherChecking.getMulticaster().listUpdated(builds);
                 lastCheckBuilds = builds;
-                lastActiveProject = settings.activeProject;
+                lastActiveProject = projectSettings.activeProject;
                 return;
             }
 
@@ -143,9 +146,9 @@ public class ListLoader {
                 }
             }
 
-            lastActiveProject = settings.activeProject;
+            lastActiveProject = projectSettings.activeProject;
         } else if (loadRequest instanceof MergeRequest) {
-            if (lastActiveProject != settings.activeProject) {
+            if (lastActiveProject != projectSettings.activeProject) {
                 return;
             }
 
@@ -179,8 +182,8 @@ public class ListLoader {
     }
 
     private GetBuildsRequestParameters getBuildsRequestParameters(int offset, int limit) {
-        return new GetBuildsRequestParameters(settings.activeProject.provider.equals("Github") ? "gh" : "bb",
-                settings.activeProject.organization, settings.activeProject.name,
+        return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
+                projectSettings.activeProject.organization, projectSettings.activeProject.name,
                 limit, offset);
     }
 
