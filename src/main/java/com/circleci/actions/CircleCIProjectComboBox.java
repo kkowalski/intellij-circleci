@@ -43,6 +43,9 @@ public class CircleCIProjectComboBox extends AnAction implements CustomComponent
                 });
 
         comboBox.addActionListener(event -> {
+            if (projectSettings.activeProject == model.getSelectedItem()) {
+                return;
+            }
             projectIntellij.getMessageBus()
                     .syncPublisher(CircleCIEvents.PROJECT_CHANGED_TOPIC)
                     .projectChanged(new ActiveProjectChangeEvent(projectSettings.activeProject, (Project) model.getSelectedItem()));
