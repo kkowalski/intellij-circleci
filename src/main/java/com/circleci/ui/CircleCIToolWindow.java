@@ -21,8 +21,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.circleci.LoadRequests.*;
-
 public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
     private CircleCISettings settings;
@@ -83,12 +81,10 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
             if (projectSettings.activeProject == null || listModel.getSize() == 0) {
                 return;
             }
-            listLoader.load(check());
+            listLoader.loadNewAndUpdated();
         }, 5, 15, TimeUnit.SECONDS);
 
-        if (projectSettings.activeProject != null) {
-            listLoader.load(reload());
-        }
+        listLoader.init(project);
     }
 
     private ActionToolbar createToolbar(Project project) {

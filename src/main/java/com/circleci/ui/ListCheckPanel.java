@@ -11,8 +11,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
 
-import static com.circleci.LoadRequests.merge;
-
 class ListCheckPanel extends BorderLayoutPanel {
 
     public ListCheckPanel(ListLoader listLoader) {
@@ -34,7 +32,7 @@ class ListCheckPanel extends BorderLayoutPanel {
         jEditorPane.addHyperlinkListener(e -> {
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                 ListCheckPanel.this.setVisible(false);
-                listLoader.load(merge());
+                listLoader.merge();
             } else {
                 if (e.getEventType() == HyperlinkEvent.EventType.ENTERED) {
                     jEditorPane.setCursor(new Cursor(Cursor.HAND_CURSOR));

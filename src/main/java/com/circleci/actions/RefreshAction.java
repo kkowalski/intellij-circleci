@@ -2,7 +2,6 @@ package com.circleci.actions;
 
 import com.circleci.ListLoader;
 import com.circleci.CircleCIDataKeys;
-import com.circleci.LoadRequests;
 import com.circleci.i18n.CircleCIBundle;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -19,6 +18,7 @@ public class RefreshAction extends AnAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         ListLoader listLoader = e.getDataContext().getData(CircleCIDataKeys.listLoaderKey);
-        listLoader.load(LoadRequests.reload());
+        listLoader.reload();
     }
+
 }

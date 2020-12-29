@@ -13,13 +13,13 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.util.EventDispatcher;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Chris Kowalski
@@ -29,7 +29,6 @@ public class ListLoader {
     private static final Logger LOG = Logger.getInstance(ListLoader.class);
 
     private CollectionListModel<Build> listModel;
-    private CircleCISettings settings;
     private CircleCIProjectSettings projectSettings;
 
     private boolean loading = false;
@@ -37,14 +36,15 @@ public class ListLoader {
     private EventDispatcher<LoadingListener> eventDispatcher = EventDispatcher.create(LoadingListener.class);
 
     private List<Build> lastCheckBuilds;
-    private Project lastActiveProject;
+    private Project checkedProject;
     private EventDispatcher<CheckingListener> eventDispatcherChecking = EventDispatcher.create(CheckingListener.class);
 
     public ListLoader(CollectionListModel<Build> listModel, com.intellij.openapi.project.Project intellijProject) {
         this.listModel = listModel;
-        this.settings = CircleCISettings.getInstance();
         this.projectSettings = CircleCIProjectSettings.getInstance(intellijProject);
+    }
 
+    public void init(com.intellij.openapi.project.Project intellijProject) {
         intellijProject.getMessageBus()
                 .connect()
                 .subscribe(CircleCIEvents.PROJECT_CHANGED_TOPIC, event -> {
@@ -52,38 +52,114 @@ public class ListLoader {
                         listModel.removeAll();
                     }
                     projectSettings.activeProject = event.getCurrent();
-                    load(LoadRequests.reload());
+                    reload();
                 });
+        reload();
     }
 
-    public void load(LoadRequest loadRequest) {
-        if (projectSettings.activeProject == null) {
+    public void reload() {
+        load(LoadRequests.reload())
+                .thenAccept((builds -> {
+                    listModel.removeAll();
+                    listModel.add(builds);
+                }));
+    }
+
+    public void loadNewAndUpdated() {
+        load(LoadRequests.check())
+                .thenAccept(this::check);
+    }
+
+    public void merge() {
+        CompletableFuture.completedFuture(lastCheckBuilds)
+                .thenCompose((builds) -> builds != null ? CompletableFuture.completedFuture(builds) : load(LoadRequests.merge()))
+                .thenAccept(this::merge);
+    }
+
+    public void loadMore() {
+        load(LoadRequests.more())
+                .thenAccept(this::more);
+    }
+
+    void more(List<Build> builds) {
+        // TODO this should be just append
+        Build lastLocalBuild = listModel.getElementAt(listModel.getSize() - 1);
+        int positionOfLastLocalInFetched = builds.indexOf(lastLocalBuild);
+        if (positionOfLastLocalInFetched < 0) {
+            listModel.add(builds);
+        } else {
+            listModel.add(builds.subList(positionOfLastLocalInFetched + 1, builds.size()));
+        }
+    }
+
+    void check(List<Build> builds) {
+        if (builds.size() == 0) {
             return;
+        }
+
+        // we have new head of the list
+        if (!builds.get(0).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
+            eventDispatcherChecking.getMulticaster().listUpdated(builds);
+            lastCheckBuilds = builds;
+            checkedProject = projectSettings.activeProject;
+            return;
+        }
+
+        // checking if status of any of the builds changed
+        // TODO build numbers can be missing, switch to a hashmap
+        for (int i = 0; i < builds.size(); i++) {
+            if (!builds.get(i).getStatus().equals(listModel.getItems().get(i).getStatus())) {
+                eventDispatcherChecking.getMulticaster().listUpdated(builds);
+                lastCheckBuilds = builds;
+            }
+        }
+
+        checkedProject = projectSettings.activeProject;
+    }
+
+    void merge(List<Build> builds) {
+        if (checkedProject != projectSettings.activeProject) {
+            return;
+        }
+
+        // prepend new builds
+        int i = 0;
+        while (i < builds.size() && !builds.get(i).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
+            i++;
+        }
+        listModel.addAll(0, builds.subList(0, i));
+
+        // update statuses
+        // TODO build numbers can be missing, switch to a hashmap
+        List<Build> oldBuilds = listModel.getItems();
+
+        i = 0;
+        while (i < builds.size()) {
+            oldBuilds.get(i).setStatus(builds.get(i).getStatus());
+            i++;
+        }
+    }
+
+    public CompletableFuture<List<Build>> load(LoadRequest loadRequest) {
+        if (projectSettings.activeProject == null) {
+            return CompletableFuture.completedFuture(new ArrayList<>());
         }
 
         if (!loading) {
             loading = true;
             eventDispatcher.getMulticaster().loadingStarted(loadRequest instanceof ReloadRequest);
 
-            JobScheduler.getScheduler().schedule(() -> {
+            return CompletableFuture.supplyAsync(() -> {
                 Instant start = Instant.now();
                 try {
                     Build latest = getLatest();
                     if (latest == null) {
-                        return;
+                        return new ArrayList<>();
                     }
-                    // TODO refactor this
                     GetBuildsRequestParameters buildsRequestParameters = resolveGetBuildsRequestParameters(loadRequest, latest);
-
-                    List<Build> builds;
-                    if (mergeRequestWithFreshCheckData(loadRequest, latest)) {
-                        builds = lastCheckBuilds;
-                    } else {
-                        builds = JSON.fromJsonString(Requests.getBuilds(buildsRequestParameters).readString(),
-                                new TypeReference<List<Build>>() {
-                                });
-                    }
-                    loadRequestActionAfterLoad(loadRequest, builds);
+                    return JSON.fromJson(Requests.getBuilds(buildsRequestParameters).readString(),
+                            new TypeReference<List<Build>>() {
+                            });
                 } catch (Exception e) {
                     String msg = "Error loading builds";
                     LOG.error(msg, e);
@@ -96,11 +172,12 @@ public class ListLoader {
                     Instant end = Instant.now();
                     LOG.debug("Fetching builds time : " + Duration.between(start, end).getNano() / 1000_1000 + "ms");
                 }
-            }, 0, TimeUnit.SECONDS);
+                return null;
+            }, JobScheduler.getScheduler());
         }
+        return CompletableFuture.completedFuture(new ArrayList<>());
     }
 
-    @NotNull
     private GetBuildsRequestParameters resolveGetBuildsRequestParameters(LoadRequest loadRequest, Build latest) {
         GetBuildsRequestParameters buildsRequestParameters;
         if (loadRequest instanceof MoreRequest) {
@@ -114,71 +191,10 @@ public class ListLoader {
     }
 
     private Build getLatest() throws IOException {
-        List<Build> builds = JSON.fromJsonString(Requests.getBuilds(getBuildsRequestParameters(0, 1)).readString(),
+        List<Build> builds = JSON.fromJson(Requests.getBuilds(getBuildsRequestParameters(0, 1)).readString(),
                 new TypeReference<List<Build>>() {
                 });
         return builds.size() > 0 ? builds.get(0) : null;
-    }
-
-    private boolean mergeRequestWithFreshCheckData(LoadRequest loadRequest, Build latest) {
-        return loadRequest instanceof MergeRequest && lastCheckBuilds != null && latest.getBuildNumber().equals(lastCheckBuilds.get(0).getBuildNumber());
-    }
-
-    public void loadRequestActionAfterLoad(LoadRequest loadRequest, List<Build> builds) {
-        if (loadRequest instanceof CheckRequest) { // TODO extract to checker Checker
-            if (builds.size() == 0) {
-                return;
-            }
-
-            // we have new head of the list
-            if (!builds.get(0).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
-                eventDispatcherChecking.getMulticaster().listUpdated(builds);
-                lastCheckBuilds = builds;
-                lastActiveProject = projectSettings.activeProject;
-                return;
-            }
-
-            // checking if status of any of the builds changed
-            for (int i = 0; i < builds.size(); i++) {
-                if (!builds.get(i).getStatus().equals(listModel.getItems().get(i).getStatus())) {
-                    eventDispatcherChecking.getMulticaster().listUpdated(builds);
-                    lastCheckBuilds = builds;
-                }
-            }
-
-            lastActiveProject = projectSettings.activeProject;
-        } else if (loadRequest instanceof MergeRequest) {
-            if (lastActiveProject != projectSettings.activeProject) {
-                return;
-            }
-
-            // prepend new builds
-            int i = 0;
-            while (i < builds.size() && !builds.get(i).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
-                i++;
-            }
-            listModel.addAll(0, builds.subList(0, i));
-
-            // update statuses
-            List<Build> oldBuilds = listModel.getItems();
-
-            i = 0;
-            while (i < builds.size()) {
-                oldBuilds.get(i).setStatus(builds.get(i).getStatus());
-                i++;
-            }
-        } else if (loadRequest instanceof MoreRequest) {
-            Build lastLocalBuild = listModel.getElementAt(listModel.getSize() - 1);
-            int lastLocalPositionInFetched = builds.indexOf(lastLocalBuild);
-            if (lastLocalPositionInFetched == -1) {
-                listModel.add(builds);
-            } else {
-                listModel.add(builds.subList(lastLocalPositionInFetched + 1, builds.size()));
-            }
-        } else {
-            listModel.removeAll();
-            listModel.add(builds);
-        }
     }
 
     private GetBuildsRequestParameters getBuildsRequestParameters(int offset, int limit) {
@@ -191,7 +207,6 @@ public class ListLoader {
         eventDispatcher.addListener(listener);
     }
 
-    // TODO extract to checker Checker
     public void addCheckingListener(CheckingListener listener) {
         eventDispatcherChecking.addListener(listener);
     }

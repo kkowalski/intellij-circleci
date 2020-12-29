@@ -90,7 +90,7 @@ public class CircleCIProjectsConfigurable implements Configurable {
         testConnectionButton.addActionListener(e -> {
             JobScheduler.getScheduler().schedule(() -> {
                 try {
-                    Me me = JSON.fromJsonString(Requests.getMe(serverUrl.getText(), token.getText()).readString(),
+                    Me me = JSON.fromJson(Requests.getMe(serverUrl.getText(), token.getText()).readString(),
                             new TypeReference<Me>() {
                             });
                     connectionResultLabel.setText("Success.");

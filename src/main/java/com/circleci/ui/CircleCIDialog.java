@@ -69,7 +69,7 @@ public class CircleCIDialog extends DialogWrapper {
                 } else {
                     JobScheduler.getScheduler().schedule(() -> {
                         try {
-                            ProjectApiV2 checkedProject = JSON.fromJsonString(Requests.getProject(proj).readString(),
+                            ProjectApiV2 checkedProject = JSON.fromJson(Requests.getProject(proj).readString(),
                                     new TypeReference<ProjectApiV2>() {
                                     });
                         } catch (Exception ex) {

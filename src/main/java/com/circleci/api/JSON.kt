@@ -27,7 +27,14 @@ object JSON {
 
     @JvmStatic
     @Throws(JsonParseException::class)
-    fun <T> fromJsonString(string: String, typeReference: com.fasterxml.jackson.core.type.TypeReference<T>): T {
+    fun <T> fromJson(string: String, typeReference: com.fasterxml.jackson.core.type.TypeReference<T>): T {
         return jackson.readValue(string, typeReference)
     }
+
+    @JvmStatic
+    @Throws(JsonParseException::class)
+    fun toJson(content: Any): String {
+        return jackson.writeValueAsString(content)
+    }
+
 }
