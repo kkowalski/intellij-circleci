@@ -15,7 +15,10 @@ public class Requests {
 
     public static RequestBuilder getMe(String serverUrl, String token) {
         return HttpRequests.request(serverUrl + API_V1_BASE_PATH + "/me")
-                .tuner(tuner -> tuner.setRequestProperty("Circle-Token", token))
+                .tuner(tuner -> {
+                    tuner.setRequestProperty("Circle-Token", token);
+                    tuner.setRequestProperty("User-Agent", "CircleCI-IntelliJ-Plugin");
+                })
                 .readTimeout(10000);
     }
 
@@ -48,8 +51,10 @@ public class Requests {
 
     private static RequestBuilder withSharedSettings(RequestBuilder builder) {
         CircleCISettings settings = CircleCISettings.getInstance();
-        return builder.tuner(tuner -> tuner.setRequestProperty("Circle-Token", settings.token))
-                .readTimeout(10000);
+        return builder.tuner(tuner -> {
+            tuner.setRequestProperty("Circle-Token", settings.token);
+            tuner.setRequestProperty("User-Agent", "CircleCI-IntelliJ-Plugin");
+        }).readTimeout(10000);
     }
 
 }
