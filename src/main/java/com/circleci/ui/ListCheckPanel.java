@@ -45,7 +45,7 @@ class ListCheckPanel extends BorderLayoutPanel {
         });
         add(jEditorPane);
 
-        project.getMessageBus().connect().subscribe(CircleCIEvents.NEW_DATA_TOPIC, () -> {
+        project.getMessageBus().connect().subscribe(CircleCIEvents.NEW_BUILDS_TOPIC, () -> {
             ListCheckPanel.this.setVisible(true);
         });
 

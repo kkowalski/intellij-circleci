@@ -73,7 +73,9 @@ public class ListLoader {
     public void loadNewAndUpdated() {
         load(LoadRequests.getNewAndUpdated())
                 .thenAccept(builds -> {
-                    listChangeChecker.check(builds);
+                    if (listChangeChecker.areNewBuildsAvailable(builds)) {
+                        sendNewBuildsEvent();
+                    }
                     updateStatuses(builds);
                 })
                 .thenRun(this::sendListUpdatedEvent);
@@ -169,8 +171,14 @@ public class ListLoader {
     private void sendListUpdatedEvent() {
         intellijProject
                 .getMessageBus()
-                .syncPublisher(CircleCIEvents.LIST_UPDATED_TOPIC)
+                .syncPublisher(CircleCIEvents.LIST_MODEL_UPDATED_TOPIC)
                 .listUpdate();
+    }
+
+    private void sendNewBuildsEvent() {
+        intellijProject
+                .getMessageBus()
+                .syncPublisher(CircleCIEvents.NEW_BUILDS_TOPIC).newBuilds();
     }
 
     private Build getLatest() throws IOException {

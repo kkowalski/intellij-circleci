@@ -36,7 +36,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
     public void init(Project project) {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListChangeChecker listChangeChecker = new ListChangeChecker(project, projectSettings, listModel);
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectSettings, listModel);
         ListLoader listLoader = new ListLoader(listModel, listChangeChecker, project);
 
         BorderLayoutPanel content = JBUI.Panels.simplePanel();

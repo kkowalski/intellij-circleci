@@ -41,7 +41,7 @@ public class LoadingSystemTest {
 
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListChangeChecker listChangeChecker = new ListChangeChecker(projectFixture.getProject(), projectSettings, listModel);
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectSettings, listModel);
         ListLoader listLoader = new ListLoader(listModel, listChangeChecker, projectFixture.getProject());
         Project project = new Project("circleci", "daproject", "github");
 
@@ -51,7 +51,7 @@ public class LoadingSystemTest {
         listLoader.init();
         sendProjectChangedEvent(null, project);
 
-        eventWaiter.waitForEvent(CircleCIEvents.LIST_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
+        eventWaiter.waitForEvent(CircleCIEvents.LIST_MODEL_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
 
         assertEquals(3, listModel.getSize());
     }
@@ -62,7 +62,7 @@ public class LoadingSystemTest {
 
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListChangeChecker listChangeChecker = new ListChangeChecker(projectFixture.getProject(), projectSettings, listModel);
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectSettings, listModel);
         ListLoader listLoader = new ListLoader(listModel, listChangeChecker, projectFixture.getProject());
 
         listModel.add(buildSequence(5, 4));
@@ -74,7 +74,7 @@ public class LoadingSystemTest {
         // action
         listLoader.loadMore();
 
-        eventWaiter.waitForEvent(CircleCIEvents.LIST_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
+        eventWaiter.waitForEvent(CircleCIEvents.LIST_MODEL_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
 
         assertEquals(5, listModel.getSize());
     }
@@ -85,7 +85,7 @@ public class LoadingSystemTest {
 
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListChangeChecker listChangeChecker = new ListChangeChecker(projectFixture.getProject(), projectSettings, listModel);
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectSettings, listModel);
         ListLoader listLoader = new ListLoader(listModel, listChangeChecker, projectFixture.getProject());
 
         listModel.add(buildSequence(3, 2, 1));
@@ -99,7 +99,7 @@ public class LoadingSystemTest {
         // action
         listLoader.loadNewAndUpdated();
 
-        eventWaiter.waitForEvent(CircleCIEvents.LIST_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
+        eventWaiter.waitForEvent(CircleCIEvents.LIST_MODEL_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
 
         assertEquals("success", listModel.getElementAt(0).getStatus());
         assertEquals(3, listModel.getSize());

@@ -23,7 +23,7 @@ public class SingleEventWaiter {
                 .connect()
                 .subscribe(eventTopic, listener);
 
-        waitAndCheck(eventSeen::get, 60, ChronoUnit.SECONDS);
+        waitAndCheck(eventSeen::get, 2, ChronoUnit.SECONDS);
     }
 
     private void waitAndCheck(Supplier<Boolean> operation, int timeout, TemporalUnit unit) throws InterruptedException {
