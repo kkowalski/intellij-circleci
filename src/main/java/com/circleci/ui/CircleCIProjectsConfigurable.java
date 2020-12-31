@@ -18,6 +18,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.ui.*;
 import com.intellij.ui.components.JBList;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -151,7 +152,12 @@ public class CircleCIProjectsConfigurable implements Configurable {
 
     @Override
     public void apply() {
-        settings.serverUrl = serverUrl.getText();
+        if (serverUrl.getText().endsWith("/")) {
+            settings.serverUrl = StringUtils.chop(serverUrl.getText());
+        } else {
+            settings.serverUrl = serverUrl.getText();
+        }
+
         settings.token = token.getText();
         settings.defaultOrganization = organization.getText();
         settings.defaultProvider = (String) provider.getSelectedItem();
