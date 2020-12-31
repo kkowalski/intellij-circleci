@@ -7,12 +7,15 @@ buildscript {
 plugins {
     id 'java'
     id 'idea'
-    id 'org.jetbrains.intellij' version '0.6.4'
-    id "org.jetbrains.kotlin.jvm" version "1.4.10"
+    id 'org.jetbrains.intellij' version '0.6.5'
+    id "org.jetbrains.kotlin.jvm" version "1.4.21"
 }
 
+def circleCIBuildNum = System.getenv('CIRCLE_BUILD_NUM')
+def versionWithBuildNum = pluginVersion + "." + circleCIBuildNum
+
 group pluginGroup
-version pluginVersion
+version = circleCIBuildNum ? versionWithBuildNum : pluginVersion
 
 sourceCompatibility = JavaVersion.VERSION_11
 targetCompatibility = JavaVersion.VERSION_11
@@ -50,9 +53,13 @@ patchPluginXml {
     changeNotes """
       Fixes:
       <ul>
-        <li>Build list merging improvements</li>
-        <li>Limit for the amount of builds fetched</li>
+        <li>Settings are now per project</li>
+        <li>Action messages</li>
+        <li>Build status is automatically updated on check</li>
       </ul>"""
+
+    sinceBuild customSinceBuild
+    untilBuild customUntilBuild
 }
 
 buildPlugin {
@@ -60,6 +67,6 @@ buildPlugin {
 }
 
 publishPlugin {
-    token System.getenv('circleciPlugin_intellijPublishToken')
+    token System.getenv('HUB_PUBLISH_TOKEN')
     channels 'alpha'
 }

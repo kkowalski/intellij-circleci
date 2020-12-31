@@ -4,6 +4,19 @@ workflows:
   ci:
     jobs:
       - build-and-test
+      - approve-publish:
+          type: approval
+          requires:
+            - build-and-test
+          filters:
+            branches:
+              only: master
+      - publish:
+          requires:
+            - approve-publish
+          filters:
+            branches:
+              only: master
 
 jobs:
   build-and-test:
@@ -17,3 +30,11 @@ jobs:
       - run:
           name: Build plugin
           command: gradle buildPlugin
+  publish:
+    docker:
+      - image: gradle:6.7-jdk11
+    steps:
+      - checkout
+      - run:
+          name: Publish plugin
+          command: gradle publishPlugin
