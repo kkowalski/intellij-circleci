@@ -153,7 +153,7 @@ public class ListLoader {
 
         if (!loading) {
             loading = true;
-            eventDispatcher.getMulticaster().loadingStarted(loadRequest instanceof ReloadRequest);
+            eventDispatcher.getMulticaster().loadingStarted(loadRequest instanceof Reload);
 
             return CompletableFuture.supplyAsync(() -> {
                 Instant start = Instant.now();

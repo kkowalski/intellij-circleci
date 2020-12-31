@@ -11,11 +11,11 @@ public class LoadRequests {
     }
 
     public static LoadRequest reload() {
-        return new ReloadRequest();
+        return new Reload();
     }
 
     public static LoadRequest getMore() {
-        return new GetMoreRequest();
+        return new GetMore();
     }
 
 }
@@ -34,7 +34,7 @@ class GetNewAndUpdated implements LoadRequest {
 
 }
 
-class ReloadRequest implements LoadRequest {
+class Reload implements LoadRequest {
 
     public GetBuildsRequestParameters getRequestParameters(CircleCIProjectSettings projectSettings, CollectionListModel<Build> listModel, Build latest) {
         return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
@@ -43,7 +43,7 @@ class ReloadRequest implements LoadRequest {
     }
 }
 
-class GetMoreRequest implements LoadRequest {
+class GetMore implements LoadRequest {
 
     public GetBuildsRequestParameters getRequestParameters(CircleCIProjectSettings projectSettings, CollectionListModel<Build> listModel, Build latest) {
         return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
