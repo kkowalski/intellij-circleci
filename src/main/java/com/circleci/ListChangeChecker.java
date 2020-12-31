@@ -37,16 +37,16 @@ public class ListChangeChecker {
 
         // check statuses
         // build numbers might be missing, can't count on a nice sequence
-        Map<Integer, Build> buildsMap = toBuildsMap(builds);
-        List<Build> oldBuilds = listModel.getItems();
-        for (Build oldBuild : oldBuilds) {
-            Build build = buildsMap.get(oldBuild.getBuildNumber());
-            if (build != null && !oldBuild.getStatus().equals(build.getStatus())) {
-                lastCheckBuilds = builds;
-                sendNewDataEvent();
-            }
-        }
-        lastCheckedProject = projectSettings.activeProject;
+//        Map<Integer, Build> buildsMap = toBuildsMap(builds);
+//        List<Build> oldBuilds = listModel.getItems();
+//        for (Build oldBuild : oldBuilds) {
+//            Build build = buildsMap.get(oldBuild.getBuildNumber());
+//            if (build != null && !oldBuild.getStatus().equals(build.getStatus())) {
+//                lastCheckBuilds = builds;
+//                sendNewDataEvent();
+//            }
+//        }
+//        lastCheckedProject = projectSettings.activeProject;
     }
 
     private Map<Integer, Build> toBuildsMap(List<Build> builds) {
