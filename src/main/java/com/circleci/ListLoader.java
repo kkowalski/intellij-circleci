@@ -4,7 +4,6 @@ import com.circleci.api.GetBuildsRequestParameters;
 import com.circleci.api.Requests;
 import com.circleci.api.model.Build;
 import com.circleci.api.JSON;
-import com.circleci.api.model.Project;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.notification.Notification;
@@ -13,38 +12,44 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.util.EventDispatcher;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Chris Kowalski
  */
 public class ListLoader {
 
-    private static final Logger LOG = Logger.getInstance(ListLoader.class);
-
     private CollectionListModel<Build> listModel;
-    private CircleCISettings settings;
+    private ListChangeChecker listChangeChecker;
     private CircleCIProjectSettings projectSettings;
 
     private boolean loading = false;
 
     private EventDispatcher<LoadingListener> eventDispatcher = EventDispatcher.create(LoadingListener.class);
 
-    private List<Build> lastCheckBuilds;
-    private Project lastActiveProject;
-    private EventDispatcher<CheckingListener> eventDispatcherChecking = EventDispatcher.create(CheckingListener.class);
+    private static final Logger LOG = Logger.getInstance(ListLoader.class);
+    private final com.intellij.openapi.project.Project intellijProject;
 
-    public ListLoader(CollectionListModel<Build> listModel, com.intellij.openapi.project.Project intellijProject) {
+    public ListLoader(CollectionListModel<Build> listModel, ListChangeChecker listChangeChecker, com.intellij.openapi.project.Project intellijProject) {
         this.listModel = listModel;
-        this.settings = CircleCISettings.getInstance();
+        this.listChangeChecker = listChangeChecker;
         this.projectSettings = CircleCIProjectSettings.getInstance(intellijProject);
+        this.intellijProject = intellijProject;
+    }
 
+    public void init() {
+        subscribeToProjectChangedEvent();
+    }
+
+    private void subscribeToProjectChangedEvent() {
         intellijProject.getMessageBus()
                 .connect()
                 .subscribe(CircleCIEvents.PROJECT_CHANGED_TOPIC, event -> {
@@ -52,43 +57,105 @@ public class ListLoader {
                         listModel.removeAll();
                     }
                     projectSettings.activeProject = event.getCurrent();
-                    load(LoadRequests.reload());
+                    reload();
                 });
     }
 
-    public void load(LoadRequest loadRequest) {
+    public void reload() {
+        load(LoadRequests.reload())
+                .thenAccept((builds -> {
+                    listModel.removeAll();
+                    listModel.add(builds);
+                }))
+                .thenRun(this::sendListUpdatedEvent);
+    }
+
+    public void loadNewAndUpdated() {
+        load(LoadRequests.getNewAndUpdated())
+                .thenAccept(builds -> {
+                    if (listChangeChecker.areNewBuildsAvailable(builds)) {
+                        sendNewBuildsEvent();
+                    }
+                    updateStatuses(builds);
+                })
+                .thenRun(this::sendListUpdatedEvent);
+    }
+
+    public void loadMore() {
+        load(LoadRequests.getMore())
+                .thenAccept(this::addNewBuilds)
+                .thenRun(this::sendListUpdatedEvent);
+    }
+
+    public void merge() {
+        if (listChangeChecker.getLastCheckedProject().equals(projectSettings.activeProject)) {
+            addNewBuilds(listChangeChecker.getLastCheckBuilds());
+            updateStatuses(listChangeChecker.getLastCheckBuilds());
+        }
+    }
+
+    public void addNewBuilds(List<Build> builds) {
+        if (listModel.getSize() == 0 ||
+                listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() > builds.get(0).getBuildNumber()) {
+            // append builds
+            listModel.add(builds);
+        } else {
+            // prepend builds
+            Build firstLocal = listModel.getElementAt(0);
+            int position = builds.indexOf(firstLocal);
+            if (position < 0) {
+                listModel.addAll(0, builds);
+            } else {
+                listModel.addAll(0, builds.subList(0, position));
+            }
+        }
+    }
+
+    public void updateStatuses(List<Build> builds) {
+        Map<Integer, Build> buildsMap = toBuildsMap(builds);
+        List<Build> oldBuilds = listModel.getItems();
+        for (Build oldBuild : oldBuilds) {
+            Build build = buildsMap.get(oldBuild.getBuildNumber());
+            if (build != null) {
+                oldBuild.setStatus(build.getStatus());
+            }
+        }
+    }
+
+    private Map<Integer, Build> toBuildsMap(List<Build> builds) {
+        Map<Integer, Build> map = new HashMap<>();
+        for (Build build : builds) {
+            map.put(build.getBuildNumber(), build);
+        }
+        return map;
+    }
+
+    public CompletableFuture<List<Build>> load(LoadRequest loadRequest) {
         if (projectSettings.activeProject == null) {
-            return;
+            return CompletableFuture.completedFuture(new ArrayList<>());
         }
 
         if (!loading) {
             loading = true;
-            eventDispatcher.getMulticaster().loadingStarted(loadRequest instanceof ReloadRequest);
+            eventDispatcher.getMulticaster().loadingStarted(loadRequest instanceof Reload);
 
-            JobScheduler.getScheduler().schedule(() -> {
+            return CompletableFuture.supplyAsync(() -> {
                 Instant start = Instant.now();
                 try {
-                    Build latest = getLatest();
+                    Build latest = getLatest(); // TODO work towards extracting this out
                     if (latest == null) {
-                        return;
+                        return new ArrayList<>();
                     }
-                    // TODO refactor this
-                    GetBuildsRequestParameters buildsRequestParameters = resolveGetBuildsRequestParameters(loadRequest, latest);
-
-                    List<Build> builds;
-                    if (mergeRequestWithFreshCheckData(loadRequest, latest)) {
-                        builds = lastCheckBuilds;
-                    } else {
-                        builds = JSON.fromJsonString(Requests.getBuilds(buildsRequestParameters).readString(),
-                                new TypeReference<List<Build>>() {
-                                });
-                    }
-                    loadRequestActionAfterLoad(loadRequest, builds);
+                    GetBuildsRequestParameters buildsRequestParameters = loadRequest.getRequestParameters(projectSettings, listModel, latest);
+                    return JSON.fromJson(Requests.getBuilds(buildsRequestParameters).readString(),
+                            new TypeReference<List<Build>>() {
+                            });
                 } catch (Exception e) {
                     String msg = "Error loading builds";
                     LOG.error(msg, e);
                     Notifications.Bus.notify(new Notification("CircleCI",
                             msg, e.getMessage(), NotificationType.ERROR));
+                    return new ArrayList<>();
                 } finally {
                     loading = false;
                     eventDispatcher.getMulticaster().loadingFinished();
@@ -96,104 +163,39 @@ public class ListLoader {
                     Instant end = Instant.now();
                     LOG.debug("Fetching builds time : " + Duration.between(start, end).getNano() / 1000_1000 + "ms");
                 }
-            }, 0, TimeUnit.SECONDS);
+            }, JobScheduler.getScheduler());
         }
+        return CompletableFuture.completedFuture(new ArrayList<>());
     }
 
-    @NotNull
-    private GetBuildsRequestParameters resolveGetBuildsRequestParameters(LoadRequest loadRequest, Build latest) {
-        GetBuildsRequestParameters buildsRequestParameters;
-        if (loadRequest instanceof MoreRequest) {
-            buildsRequestParameters = getBuildsRequestParameters(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 10);
-        } else if (loadRequest instanceof ReloadRequest) {
-            buildsRequestParameters = getBuildsRequestParameters(0, 25);
-        } else {
-            buildsRequestParameters = getBuildsRequestParameters(0, Math.min(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 100));
-        }
-        return buildsRequestParameters;
+    private void sendListUpdatedEvent() {
+        intellijProject
+                .getMessageBus()
+                .syncPublisher(CircleCIEvents.LIST_MODEL_UPDATED_TOPIC)
+                .listUpdate();
+    }
+
+    private void sendNewBuildsEvent() {
+        intellijProject
+                .getMessageBus()
+                .syncPublisher(CircleCIEvents.NEW_BUILDS_TOPIC).newBuilds();
     }
 
     private Build getLatest() throws IOException {
-        List<Build> builds = JSON.fromJsonString(Requests.getBuilds(getBuildsRequestParameters(0, 1)).readString(),
+        List<Build> builds = JSON.fromJson(Requests.getBuilds(requestParamsLatestBuild()).readString(),
                 new TypeReference<List<Build>>() {
                 });
         return builds.size() > 0 ? builds.get(0) : null;
     }
 
-    private boolean mergeRequestWithFreshCheckData(LoadRequest loadRequest, Build latest) {
-        return loadRequest instanceof MergeRequest && lastCheckBuilds != null && latest.getBuildNumber().equals(lastCheckBuilds.get(0).getBuildNumber());
-    }
-
-    public void loadRequestActionAfterLoad(LoadRequest loadRequest, List<Build> builds) {
-        if (loadRequest instanceof CheckRequest) { // TODO extract to checker Checker
-            if (builds.size() == 0) {
-                return;
-            }
-
-            // we have new head of the list
-            if (!builds.get(0).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
-                eventDispatcherChecking.getMulticaster().listUpdated(builds);
-                lastCheckBuilds = builds;
-                lastActiveProject = projectSettings.activeProject;
-                return;
-            }
-
-            // checking if status of any of the builds changed
-            for (int i = 0; i < builds.size(); i++) {
-                if (!builds.get(i).getStatus().equals(listModel.getItems().get(i).getStatus())) {
-                    eventDispatcherChecking.getMulticaster().listUpdated(builds);
-                    lastCheckBuilds = builds;
-                }
-            }
-
-            lastActiveProject = projectSettings.activeProject;
-        } else if (loadRequest instanceof MergeRequest) {
-            if (lastActiveProject != projectSettings.activeProject) {
-                return;
-            }
-
-            // prepend new builds
-            int i = 0;
-            while (i < builds.size() && !builds.get(i).getBuildNumber().equals(listModel.getElementAt(0).getBuildNumber())) {
-                i++;
-            }
-            listModel.addAll(0, builds.subList(0, i));
-
-            // update statuses
-            List<Build> oldBuilds = listModel.getItems();
-
-            i = 0;
-            while (i < builds.size()) {
-                oldBuilds.get(i).setStatus(builds.get(i).getStatus());
-                i++;
-            }
-        } else if (loadRequest instanceof MoreRequest) {
-            Build lastLocalBuild = listModel.getElementAt(listModel.getSize() - 1);
-            int lastLocalPositionInFetched = builds.indexOf(lastLocalBuild);
-            if (lastLocalPositionInFetched == -1) {
-                listModel.add(builds);
-            } else {
-                listModel.add(builds.subList(lastLocalPositionInFetched + 1, builds.size()));
-            }
-        } else {
-            listModel.removeAll();
-            listModel.add(builds);
-        }
-    }
-
-    private GetBuildsRequestParameters getBuildsRequestParameters(int offset, int limit) {
+    private GetBuildsRequestParameters requestParamsLatestBuild() {
         return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
                 projectSettings.activeProject.organization, projectSettings.activeProject.name,
-                limit, offset);
+                0, 1);
     }
 
     public void addLoadingListener(LoadingListener listener) {
         eventDispatcher.addListener(listener);
-    }
-
-    // TODO extract to checker Checker
-    public void addCheckingListener(CheckingListener listener) {
-        eventDispatcherChecking.addListener(listener);
     }
 
 }

@@ -8,8 +8,6 @@ import com.intellij.ui.components.JBScrollPane;
 
 import javax.swing.*;
 
-import static com.circleci.LoadRequests.more;
-
 class ScrollPanel extends JBScrollPane {
 
     public ScrollPanel(JBList<Build> list, ListLoader listLoader) {
@@ -20,7 +18,7 @@ class ScrollPanel extends JBScrollPane {
         ScrollingUtil.installActions(list);
         getVerticalScrollBar().getModel().addChangeListener(e -> {
             if (list.getModel().getSize() > 0 && isScrollAtThreshold(ScrollPanel.this)) {
-                listLoader.load(more());
+                listLoader.loadMore();
             }
         });
     }

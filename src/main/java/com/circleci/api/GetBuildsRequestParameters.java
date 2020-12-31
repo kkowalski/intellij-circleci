@@ -7,7 +7,7 @@ public class GetBuildsRequestParameters {
     public int limit;
     public int offset;
 
-    public GetBuildsRequestParameters(String provider, String organization, String project, int limit, int offset) {
+    public GetBuildsRequestParameters(String provider, String organization, String project, int offset, int limit) {
         this.provider = provider;
         this.organization = organization;
         this.project = project;

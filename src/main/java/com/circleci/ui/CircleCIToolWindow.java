@@ -21,8 +21,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.circleci.LoadRequests.*;
-
 public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
     private CircleCISettings settings;
@@ -38,7 +36,8 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
     public void init(Project project) {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListLoader listLoader = new ListLoader(listModel, project);
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectSettings, listModel);
+        ListLoader listLoader = new ListLoader(listModel, listChangeChecker, project);
 
         BorderLayoutPanel content = JBUI.Panels.simplePanel();
         JBLoadingPanel loadingPanel = new LoadingPanel(parentDisposable, content, listLoader);
@@ -71,7 +70,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
         BorderLayoutPanel wrapper = JBUI.Panels.simplePanel();
         wrapper.add(toolbar.getComponent(), BorderLayout.NORTH);
-        ListCheckPanel listCheckPanel = new ListCheckPanel(listLoader);
+        ListCheckPanel listCheckPanel = new ListCheckPanel(listLoader, project);
         wrapper.add(listCheckPanel, BorderLayout.SOUTH);
 
         content.addToTop(wrapper);
@@ -83,12 +82,11 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
             if (projectSettings.activeProject == null || listModel.getSize() == 0) {
                 return;
             }
-            listLoader.load(check());
+            listLoader.loadNewAndUpdated();
         }, 5, 15, TimeUnit.SECONDS);
 
-        if (projectSettings.activeProject != null) {
-            listLoader.load(reload());
-        }
+        listLoader.init();
+        listLoader.reload();
     }
 
     private ActionToolbar createToolbar(Project project) {
