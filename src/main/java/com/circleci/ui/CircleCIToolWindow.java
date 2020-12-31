@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.*;
 import com.intellij.ui.components.JBList;
@@ -19,13 +20,15 @@ import com.intellij.util.ui.components.BorderLayoutPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class CircleCIToolWindow extends SimpleToolWindowPanel {
+public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposable {
 
     private CircleCISettings settings;
     private CircleCIProjectSettings projectSettings;
     private Disposable parentDisposable;
+    private ScheduledFuture<?> checkerTask;
 
     public CircleCIToolWindow(Project project, ToolWindow toolWindow, Disposable parentDisposable) {
         super(true);
@@ -35,6 +38,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
     }
 
     public void init(Project project) {
+        Disposer.register(parentDisposable, this);
         CollectionListModel<Build> listModel = new CollectionListModel<>();
         ListChangeChecker listChangeChecker = new ListChangeChecker(projectSettings, listModel);
         ListLoader listLoader = new ListLoader(listModel, listChangeChecker, project);
@@ -77,8 +81,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
         JScrollPane scrollPane = new ScrollPanel(list, listLoader);
         content.addToCenter(scrollPane);
 
-        // This needs to be disposed
-        JobScheduler.getScheduler().scheduleWithFixedDelay(() -> {
+        checkerTask = JobScheduler.getScheduler().scheduleWithFixedDelay(() -> {
             if (projectSettings.activeProject == null || listModel.getSize() == 0) {
                 return;
             }
@@ -110,4 +113,10 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
             setContent(loadingPanel);
         }
     }
+
+    @Override
+    public void dispose() {
+        checkerTask.cancel(false);
+    }
+
 }
