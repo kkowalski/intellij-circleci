@@ -32,6 +32,7 @@ public class LoadingSystemTest {
         testApiServer = new TestAPIServer();
 
         CircleCISettings settings = CircleCISettings.getInstance();
+        settings.token = "token";
         settings.serverUrl = testApiServer.setup();
     }
 
