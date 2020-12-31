@@ -36,7 +36,8 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
     public void init(Project project) {
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListLoader listLoader = new ListLoader(listModel, project);
+        ListChangeChecker listChangeChecker = new ListChangeChecker(project, projectSettings, listModel);
+        ListLoader listLoader = new ListLoader(listModel, listChangeChecker, project);
 
         BorderLayoutPanel content = JBUI.Panels.simplePanel();
         JBLoadingPanel loadingPanel = new LoadingPanel(parentDisposable, content, listLoader);
@@ -69,7 +70,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
 
         BorderLayoutPanel wrapper = JBUI.Panels.simplePanel();
         wrapper.add(toolbar.getComponent(), BorderLayout.NORTH);
-        ListCheckPanel listCheckPanel = new ListCheckPanel(listLoader);
+        ListCheckPanel listCheckPanel = new ListCheckPanel(listLoader, project);
         wrapper.add(listCheckPanel, BorderLayout.SOUTH);
 
         content.addToTop(wrapper);

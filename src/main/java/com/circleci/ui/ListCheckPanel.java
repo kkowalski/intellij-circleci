@@ -1,7 +1,9 @@
 package com.circleci.ui;
 
+import com.circleci.CircleCIEvents;
 import com.circleci.ListLoader;
 import com.circleci.LoadingListener;
+import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.components.BorderLayoutPanel;
@@ -13,7 +15,7 @@ import java.awt.*;
 
 class ListCheckPanel extends BorderLayoutPanel {
 
-    public ListCheckPanel(ListLoader listLoader) {
+    public ListCheckPanel(ListLoader listLoader, Project project) {
         setOpaque(true);
         setVisible(false);
 
@@ -43,7 +45,10 @@ class ListCheckPanel extends BorderLayoutPanel {
         });
         add(jEditorPane);
 
-        listLoader.addCheckingListener(builds -> ListCheckPanel.this.setVisible(true));
+        project.getMessageBus().connect().subscribe(CircleCIEvents.NEW_DATA_TOPIC, () -> {
+            ListCheckPanel.this.setVisible(true);
+        });
+
         listLoader.addLoadingListener(new LoadingListener() {
             @Override
             public void loadingStarted(boolean reload) {

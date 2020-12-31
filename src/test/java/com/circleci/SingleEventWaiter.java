@@ -19,12 +19,11 @@ public class SingleEventWaiter {
     AtomicBoolean eventSeen = new AtomicBoolean(false);
 
     public <L> void waitForEvent(Topic<L> eventTopic, L listener) throws InterruptedException {
-        AtomicBoolean eventSeen = new AtomicBoolean(false);
         intellijProject.getMessageBus()
                 .connect()
                 .subscribe(eventTopic, listener);
 
-        waitAndCheck(eventSeen::get, 2, ChronoUnit.SECONDS);
+        waitAndCheck(eventSeen::get, 60, ChronoUnit.SECONDS);
     }
 
     private void waitAndCheck(Supplier<Boolean> operation, int timeout, TemporalUnit unit) throws InterruptedException {

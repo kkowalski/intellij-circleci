@@ -39,8 +39,10 @@ public class LoadingSystemTest {
     public void reload() throws InterruptedException {
         SingleEventWaiter eventWaiter = new SingleEventWaiter(projectFixture.getProject());
 
+        CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListLoader listLoader = new ListLoader(listModel, projectFixture.getProject());
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectFixture.getProject(), projectSettings, listModel);
+        ListLoader listLoader = new ListLoader(listModel, listChangeChecker, projectFixture.getProject());
         Project project = new Project("circleci", "daproject", "github");
 
         testApiServer.setResponse(buildSequence(3, 2, 1));
@@ -57,9 +59,11 @@ public class LoadingSystemTest {
     @Test
     public void loadMore() throws InterruptedException {
         SingleEventWaiter eventWaiter = new SingleEventWaiter(projectFixture.getProject());
+
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListLoader listLoader = new ListLoader(listModel, projectFixture.getProject());
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectFixture.getProject(), projectSettings, listModel);
+        ListLoader listLoader = new ListLoader(listModel, listChangeChecker, projectFixture.getProject());
 
         listModel.add(buildSequence(5, 4));
 
@@ -78,9 +82,11 @@ public class LoadingSystemTest {
     @Test
     public void loadNewAndUpdated() throws InterruptedException {
         SingleEventWaiter eventWaiter = new SingleEventWaiter(projectFixture.getProject());
+
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
-        ListLoader listLoader = new ListLoader(listModel, projectFixture.getProject());
+        ListChangeChecker listChangeChecker = new ListChangeChecker(projectFixture.getProject(), projectSettings, listModel);
+        ListLoader listLoader = new ListLoader(listModel, listChangeChecker, projectFixture.getProject());
 
         listModel.add(buildSequence(3, 2, 1));
 
@@ -93,12 +99,14 @@ public class LoadingSystemTest {
         // action
         listLoader.loadNewAndUpdated();
 
-        eventWaiter.waitForEvent(CircleCIEvents.NEW_ITEMS_STORED_TOPIC, () -> eventWaiter.eventSeen.set(true));
+        eventWaiter.waitForEvent(CircleCIEvents.LIST_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
+
+        assertEquals("success", listModel.getElementAt(0).getStatus());
+        assertEquals(3, listModel.getSize());
 
         listLoader.merge();
 
         assertEquals(4, listModel.getSize());
-        assertEquals(listModel.getElementAt(1).getStatus(), "success");
     }
 
 
