@@ -1,37 +1,54 @@
 package com.circleci;
 
+import com.circleci.api.GetBuildsRequestParameters;
+import com.circleci.api.model.Build;
+import com.intellij.ui.CollectionListModel;
+
 public class LoadRequests {
 
-    public static LoadRequest check() {
-        return new CheckRequest();
-    }
-
-    public static LoadRequest merge() {
-        return new MergeRequest();
+    public static LoadRequest getNewAndUpdated() {
+        return new GetNewAndUpdated();
     }
 
     public static LoadRequest reload() {
         return new ReloadRequest();
     }
 
-    public static LoadRequest more() {
-        return new MoreRequest();
+    public static LoadRequest getMore() {
+        return new GetMoreRequest();
     }
 
 }
 
-abstract class LoadRequest {
+interface LoadRequest {
+    GetBuildsRequestParameters getRequestParameters(CircleCIProjectSettings projectSettings, CollectionListModel<Build> listModel, Build latest);
+}
+
+class GetNewAndUpdated implements LoadRequest {
+
+    public GetBuildsRequestParameters getRequestParameters(CircleCIProjectSettings projectSettings, CollectionListModel<Build> listModel, Build latest) {
+        return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
+                projectSettings.activeProject.organization, projectSettings.activeProject.name,
+                0, Math.min(latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 100));
+    }
 
 }
 
-class CheckRequest extends LoadRequest {
+class ReloadRequest implements LoadRequest {
+
+    public GetBuildsRequestParameters getRequestParameters(CircleCIProjectSettings projectSettings, CollectionListModel<Build> listModel, Build latest) {
+        return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
+                projectSettings.activeProject.organization, projectSettings.activeProject.name,
+                0, 25);
+    }
 }
 
-class ReloadRequest extends LoadRequest {
-}
+class GetMoreRequest implements LoadRequest {
 
-class MergeRequest extends LoadRequest {
-}
+    public GetBuildsRequestParameters getRequestParameters(CircleCIProjectSettings projectSettings, CollectionListModel<Build> listModel, Build latest) {
+        return new GetBuildsRequestParameters(projectSettings.activeProject.provider.equals("Github") ? "gh" : "bb",
+                projectSettings.activeProject.organization, projectSettings.activeProject.name,
+                latest.getBuildNumber() - listModel.getElementAt(listModel.getSize() - 1).getBuildNumber() + 1, 10);
+    }
 
-class MoreRequest extends LoadRequest {
 }

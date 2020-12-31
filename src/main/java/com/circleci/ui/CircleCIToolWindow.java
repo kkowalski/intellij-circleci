@@ -84,7 +84,8 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel {
             listLoader.loadNewAndUpdated();
         }, 5, 15, TimeUnit.SECONDS);
 
-        listLoader.init(project);
+        listLoader.init();
+        listLoader.reload();
     }
 
     private ActionToolbar createToolbar(Project project) {

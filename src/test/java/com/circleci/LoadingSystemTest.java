@@ -10,12 +10,8 @@ import com.intellij.ui.CollectionListModel;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,27 +36,27 @@ public class LoadingSystemTest {
     }
 
     @Test
-    public void initialLoad() throws InterruptedException {
-        CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
+    public void reload() throws InterruptedException {
+        SingleEventWaiter eventWaiter = new SingleEventWaiter(projectFixture.getProject());
+
         CollectionListModel<Build> listModel = new CollectionListModel<>();
         ListLoader listLoader = new ListLoader(listModel, projectFixture.getProject());
+        Project project = new Project("circleci", "daproject", "github");
 
         testApiServer.setResponse(buildSequence(3, 2, 1));
 
-        projectSettings.activeProject = new Project("circleci", "daproject", "github");
-
         // action
-        listLoader.init(projectFixture.getProject());
+        listLoader.init();
+        sendProjectChangedEvent(null, project);
 
-        waitAndCheck(() -> {
-            return false;
-        }, 2, ChronoUnit.SECONDS);
+        eventWaiter.waitForEvent(CircleCIEvents.LIST_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
 
         assertEquals(3, listModel.getSize());
     }
 
     @Test
     public void loadMore() throws InterruptedException {
+        SingleEventWaiter eventWaiter = new SingleEventWaiter(projectFixture.getProject());
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
         ListLoader listLoader = new ListLoader(listModel, projectFixture.getProject());
@@ -74,15 +70,14 @@ public class LoadingSystemTest {
         // action
         listLoader.loadMore();
 
-        waitAndCheck(() -> {
-            return false;
-        }, 2, ChronoUnit.SECONDS);
+        eventWaiter.waitForEvent(CircleCIEvents.LIST_UPDATED_TOPIC, () -> eventWaiter.eventSeen.set(true));
 
         assertEquals(5, listModel.getSize());
     }
 
     @Test
-    public void loadNew() throws InterruptedException {
+    public void loadNewAndUpdated() throws InterruptedException {
+        SingleEventWaiter eventWaiter = new SingleEventWaiter(projectFixture.getProject());
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectFixture.getProject());
         CollectionListModel<Build> listModel = new CollectionListModel<>();
         ListLoader listLoader = new ListLoader(listModel, projectFixture.getProject());
@@ -98,15 +93,9 @@ public class LoadingSystemTest {
         // action
         listLoader.loadNewAndUpdated();
 
-        waitAndCheck(() -> {
-            return false;
-        }, 2, ChronoUnit.SECONDS);
+        eventWaiter.waitForEvent(CircleCIEvents.NEW_ITEMS_STORED_TOPIC, () -> eventWaiter.eventSeen.set(true));
 
         listLoader.merge();
-
-        waitAndCheck(() -> {
-            return false;
-        }, 2, ChronoUnit.SECONDS);
 
         assertEquals(4, listModel.getSize());
         assertEquals(listModel.getElementAt(1).getStatus(), "success");
@@ -131,15 +120,12 @@ public class LoadingSystemTest {
         return build;
     }
 
-    public void waitAndCheck(Supplier<Boolean> operation, int timeout, TemporalUnit unit) throws InterruptedException {
-        Instant start = Instant.now();
-        Instant deadline = start.plus(timeout, unit);
-        while (true) {
-            boolean result = operation.get();
-            if (result || Instant.now().isAfter(deadline)) {
-                return;
-            }
-            Thread.sleep(500L);
-        }
+    private void sendProjectChangedEvent(Project previous, Project current) {
+        projectFixture.getProject()
+                .getMessageBus()
+                .syncPublisher(CircleCIEvents.PROJECT_CHANGED_TOPIC).projectChanged(
+                new ActiveProjectChangeEvent(null, current)
+        );
     }
+
 }
