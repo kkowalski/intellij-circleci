@@ -49,14 +49,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
 
         openSettingsPanelIfNotConfigured(loadingPanel, openSettingsPanel);
 
-        ApplicationManager.getApplication().getMessageBus()
-                .connect().subscribe(CircleCIEvents.SETTINGS_UPDATED_TOPIC, state -> {
-            if ("".equals(settings.token) || "".equals(settings.serverUrl)) {
-                return;
-            }
-            removeAll();
-            setContent(loadingPanel);
-        });
+        updateLoadingPanelOnSettingsUpdated(loadingPanel);
 
         JBList<Build> list = new BuildList(listModel);
         list.setDataProvider(dataId -> {
@@ -81,15 +74,30 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
         JScrollPane scrollPane = new ScrollPanel(list, listLoader);
         content.addToCenter(scrollPane);
 
-        checkerTask = JobScheduler.getScheduler().scheduleWithFixedDelay(() -> {
+        checkerTask = startChecker(listModel, listLoader);
+
+        listLoader.init();
+        listLoader.reload();
+    }
+
+    private void updateLoadingPanelOnSettingsUpdated(JBLoadingPanel loadingPanel) {
+        ApplicationManager.getApplication().getMessageBus()
+                .connect().subscribe(CircleCIEvents.SETTINGS_UPDATED_TOPIC, state -> {
+            if ("".equals(settings.token) || "".equals(settings.serverUrl)) {
+                return;
+            }
+            removeAll();
+            setContent(loadingPanel);
+        });
+    }
+
+    private ScheduledFuture<?> startChecker(CollectionListModel<Build> listModel, ListLoader listLoader) {
+        return JobScheduler.getScheduler().scheduleWithFixedDelay(() -> {
             if (projectSettings.activeProject == null || listModel.getSize() == 0) {
                 return;
             }
             listLoader.loadNewAndUpdated();
         }, 5, 15, TimeUnit.SECONDS);
-
-        listLoader.init();
-        listLoader.reload();
     }
 
     private ActionToolbar createToolbar(Project project) {
