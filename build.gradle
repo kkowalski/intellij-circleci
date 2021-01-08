@@ -13,6 +13,7 @@ plugins {
 
 def circleCIBuildNum = System.getenv('CIRCLE_BUILD_NUM')
 def versionWithBuildNum = pluginVersion + "." + circleCIBuildNum
+def channel = System.getenv('HUB_CHANNEL') ? System.getenv('HUB_CHANNEL') : ''
 
 group pluginGroup
 version = circleCIBuildNum ? versionWithBuildNum : pluginVersion
@@ -68,5 +69,5 @@ buildPlugin {
 
 publishPlugin {
     token System.getenv('HUB_PUBLISH_TOKEN')
-    channels 'alpha'
+    channels channel
 }
