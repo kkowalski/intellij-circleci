@@ -3,63 +3,10 @@ version: 2.1
 workflows:
   ci:
     jobs:
-      - build-and-test
-      - approve-publish-alpha:
-          type: approval
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              only: master
-      - approve-publish-stable:
-          type: approval
-          requires:
-            - build-and-test
-          filters:
-            branches:
-              only: master
-      - publish-to-alpha:
-          requires:
-            - approve-publish-alpha
-          filters:
-            branches:
-              only: master
-      - publish-to-stable:
-          requires:
-            - approve-publish-stable
-          filters:
-            branches:
-              only: master
+      - test-machine
 
 jobs:
-  build-and-test:
-    docker:
-      - image: gradle:6.7-jdk11
+  test-machine:
+    machine: true
     steps:
-      - checkout
-      - run:
-          name: Run tests
-          command: gradle test
-      - run:
-          name: Build plugin
-          command: gradle buildPlugin
-  publish-to-alpha:
-    docker:
-      - image: gradle:6.7-jdk11
-    environment:
-      HUB_CHANNEL: alpha
-    steps:
-      - checkout
-      - run:
-          name: Publish plugin
-          command: gradle publishPlugin
-  publish-to-stable:
-    docker:
-      - image: gradle:6.7-jdk11
-    environment:
-      HUB_CHANNEL: stable
-    steps:
-      - checkout
-      - run:
-          name: Publish plugin
-          command: gradle publishPlugin
+      - run: echo "hello world"
