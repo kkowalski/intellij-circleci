@@ -14,3 +14,9 @@ jobs:
       - run:
           name: Run tests
           command: ./gradlew test
+      - run:
+          name: Run tests
+          command: pwd
+      - run:
+          name: ls
+          command: ls -l
