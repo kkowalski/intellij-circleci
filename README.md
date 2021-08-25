@@ -1,4 +1,4 @@
-# intellij-circlecix
+# intellij-circlecixx
 [![CircleCI](https://circleci.com/gh/kkowalski/intellij-circleci.svg?style=shield)](https://circleci.com/gh/kkowalski/intellij-circleci)
 
 
