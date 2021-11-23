@@ -19,7 +19,7 @@ public class OpenWorkflow extends AnAction {
     @Override
     public void update(@NotNull AnActionEvent event) {
         Build build = event.getDataContext().getData(CircleCIDataKeys.listSelectedBuildKey);
-        if (build.getWorkflows() != null) {
+        if (build != null && build.getWorkflows() != null) {
             event.getPresentation().setEnabled(true);
         } else {
             event.getPresentation().setEnabled(false);
