@@ -48,6 +48,8 @@ intellij {
 
     version ideaVersion
     println "Building for IntelliJ version: ${version}"
+
+    updateSinceUntilBuild = false
 }
 
 patchPluginXml {
@@ -59,8 +61,7 @@ patchPluginXml {
         <li>Build status is automatically updated on check</li>
       </ul>"""
 
-    sinceBuild customSinceBuild
-    untilBuild customUntilBuild
+    sinceBuild 203.5981 // default
 }
 
 buildPlugin {
