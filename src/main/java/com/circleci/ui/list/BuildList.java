@@ -27,8 +27,8 @@ public class BuildList extends JBList<Build> {
         super(dataModel);
 
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(project);
-        dataModel.setFilter(build -> build.getBranch().contains(projectSettings.branchFilter));
-        project.getMessageBus().connect().subscribe(CircleCIEvents.BRANCH_FILTER_CHANGED_TOPIC, dataModel::refilter);
+        dataModel.setFilter(build -> build.getFilterableText().contains(projectSettings.buildFilter));
+        project.getMessageBus().connect().subscribe(CircleCIEvents.BUILD_FILTER_CHANGED_TOPIC, dataModel::refilter);
         dataModel.getOriginalModel().addListDataListener(new EmptyTextSetter());
 
         setCellRenderer(new BuildListCellRenderer());

@@ -12,10 +12,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-public class BranchFilterTextField extends AnAction implements CustomComponentAction {
+public class BuildFilterTextField extends AnAction implements CustomComponentAction {
     private final com.intellij.openapi.project.Project projectIntellij;
 
-    public BranchFilterTextField(com.intellij.openapi.project.Project projectIntellij) {
+    public BuildFilterTextField(com.intellij.openapi.project.Project projectIntellij) {
         this.projectIntellij = projectIntellij;
     }
 
@@ -25,8 +25,8 @@ public class BranchFilterTextField extends AnAction implements CustomComponentAc
         CircleCIProjectSettings projectSettings = CircleCIProjectSettings.getInstance(projectIntellij);
 
         TextFieldWithHistory field = new TextFieldWithHistory();
-        field.setText(projectSettings.branchFilter);
-        field.setToolTipText(CircleCIBundle.message("branch.filter.action"));
+        field.setText(projectSettings.buildFilter);
+        field.setToolTipText(CircleCIBundle.message("build.filter.action"));
         field.setMinimumAndPreferredWidth(200);
 
         projectIntellij.getMessageBus()
@@ -38,13 +38,13 @@ public class BranchFilterTextField extends AnAction implements CustomComponentAc
                 });
 
         field.addActionListener(event -> {
-            projectSettings.branchFilter = field.getText();
+            projectSettings.buildFilter = field.getText();
             field.addCurrentTextToHistory();
 
             projectIntellij
                     .getMessageBus()
-                    .syncPublisher(CircleCIEvents.BRANCH_FILTER_CHANGED_TOPIC)
-                    .branchFilterChanged();
+                    .syncPublisher(CircleCIEvents.BUILD_FILTER_CHANGED_TOPIC)
+                    .buildFilterChanged();
         });
 
         return field;

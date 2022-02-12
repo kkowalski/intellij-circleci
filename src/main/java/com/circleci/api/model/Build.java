@@ -168,4 +168,14 @@ public class Build {
     public int hashCode() {
         return Objects.hash(buildNumber, url, vcsType, project, organization);
     }
+
+    public String getFilterableText() {
+        return new StringBuilder()
+                .append(getBranch())
+                .append(getBuildNumber())
+                .append(getSubject())
+                .append(getUser() != null ? getUser().getLogin() : "")
+                .append(getWorkflows() != null ? getWorkflows().getJobName() : "")
+                .toString();
+    }
 }

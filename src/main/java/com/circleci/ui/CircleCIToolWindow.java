@@ -1,7 +1,7 @@
 package com.circleci.ui;
 
 import com.circleci.*;
-import com.circleci.actions.BranchFilterTextField;
+import com.circleci.actions.BuildFilterTextField;
 import com.circleci.actions.CircleCIProjectComboBox;
 import com.circleci.api.model.Build;
 import com.circleci.ui.list.BuildList;
@@ -16,7 +16,6 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.*;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBLoadingPanel;
-import com.intellij.ui.speedSearch.FilteringListModel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 
@@ -108,7 +107,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.Refresh"));
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.AddProject"));
         actionGroup.add(new CircleCIProjectComboBox(project));
-        actionGroup.add(new BranchFilterTextField(project));
+        actionGroup.add(new BuildFilterTextField(project));
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.OpenSettings"));
         actionGroup.addSeparator();
 

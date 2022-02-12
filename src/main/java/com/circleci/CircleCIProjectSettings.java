@@ -20,7 +20,7 @@ public class CircleCIProjectSettings implements PersistentStateComponent<CircleC
 
     public Project activeProject;
     public List<Project> projects = new ArrayList<>();
-    public String branchFilter = "";
+    public String buildFilter = "";
 
     @Override
     public CircleCIProjectSettings getState() {
