@@ -1,6 +1,10 @@
 .gradle
 /build/
+
 .idea
+intellij-circleci.iml
+intellij-circleci.ipr
+intellij-circleci.iws
 
 # Ignore Gradle GUI config
 gradle-app.setting
