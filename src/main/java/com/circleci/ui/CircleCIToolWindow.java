@@ -1,6 +1,7 @@
 package com.circleci.ui;
 
 import com.circleci.*;
+import com.circleci.actions.BranchFilterTextField;
 import com.circleci.actions.CircleCIProjectComboBox;
 import com.circleci.api.model.Build;
 import com.circleci.ui.list.BuildList;
@@ -15,6 +16,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.*;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBLoadingPanel;
+import com.intellij.ui.speedSearch.FilteringListModel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.components.BorderLayoutPanel;
 
@@ -51,7 +53,11 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
 
         updateLoadingPanelOnSettingsUpdated(loadingPanel);
 
-        JBList<Build> list = new BuildList(listModel);
+        FilteringListModel<Build> filteringListModel = new FilteringListModel<>(listModel);
+        filteringListModel.setFilter(build -> build.getBranch().contains(projectSettings.branchFilter));
+        project.getMessageBus().connect().subscribe(CircleCIEvents.BRANCH_FILTER_CHANGED_TOPIC, filteringListModel::refilter);
+
+        JBList<Build> list = new BuildList(filteringListModel);
         list.setDataProvider(dataId -> {
             if (dataId.equals(CircleCIDataKeys.listSelectedBuildKey.getName())) {
                 return list.getSelectedValue();
@@ -105,8 +111,8 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
         final DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.Refresh"));
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.AddProject"));
-        CircleCIProjectComboBox projectPicker = new CircleCIProjectComboBox(project);
-        actionGroup.add(projectPicker);
+        actionGroup.add(new CircleCIProjectComboBox(project));
+        actionGroup.add(new BranchFilterTextField(project));
         actionGroup.add(ActionManager.getInstance().getAction("CircleCI.OpenSettings"));
         actionGroup.addSeparator();
 
