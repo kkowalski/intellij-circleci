@@ -53,11 +53,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
 
         updateLoadingPanelOnSettingsUpdated(loadingPanel);
 
-        FilteringListModel<Build> filteringListModel = new FilteringListModel<>(listModel);
-        filteringListModel.setFilter(build -> build.getBranch().contains(projectSettings.branchFilter));
-        project.getMessageBus().connect().subscribe(CircleCIEvents.BRANCH_FILTER_CHANGED_TOPIC, filteringListModel::refilter);
-
-        JBList<Build> list = new BuildList(filteringListModel);
+        JBList<Build> list = new BuildList(project, listModel);
         list.setDataProvider(dataId -> {
             if (dataId.equals(CircleCIDataKeys.listSelectedBuildKey.getName())) {
                 return list.getSelectedValue();
