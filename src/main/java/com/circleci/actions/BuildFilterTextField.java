@@ -29,14 +29,6 @@ public class BuildFilterTextField extends AnAction implements CustomComponentAct
         field.setToolTipText(CircleCIBundle.message("build.filter.action"));
         field.setMinimumAndPreferredWidth(200);
 
-        projectIntellij.getMessageBus()
-                .connect()
-                .subscribe(CircleCIEvents.PROJECT_CHANGED_TOPIC, event -> {
-                    if (event.getPrevious() != event.getCurrent()) {
-                        field.setText("");
-                    }
-                });
-
         field.addActionListener(event -> {
             projectSettings.buildFilter = field.getText();
             field.addCurrentTextToHistory();
