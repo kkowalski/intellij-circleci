@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.circleci.intellij</id>
     <name>CircleCI Integration</name>
-    <vendor email="krzkov@gmail.com">Chris Kowalski</vendor>
+    <vendor>Chris Kowalski</vendor>
 
     <description><![CDATA[
     Provides integration with <a href="https://circleci.com">CircleCI</a>.
