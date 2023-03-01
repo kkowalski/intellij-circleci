@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>com.circleci.intellij</id>
-    <name>Chris Kowalski</name>
+    <name>CircleCI Integration</name>
     <vendor email="krzkov@gmail.com">Chris Kowalski</vendor>
 
     <description><![CDATA[
