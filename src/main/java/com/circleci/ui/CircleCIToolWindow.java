@@ -66,6 +66,7 @@ public class CircleCIToolWindow extends SimpleToolWindowPanel implements Disposa
         toolbar.setTargetComponent(list);
 
         BorderLayoutPanel wrapper = JBUI.Panels.simplePanel();
+
         wrapper.add(toolbar.getComponent(), BorderLayout.NORTH);
         ListCheckPanel listCheckPanel = new ListCheckPanel(listLoader, project);
         wrapper.add(listCheckPanel, BorderLayout.SOUTH);
