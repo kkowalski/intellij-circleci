@@ -49,6 +49,7 @@ class ListCheckPanel extends BorderLayoutPanel {
             ListCheckPanel.this.setVisible(true);
         });
 
+
         listLoader.addLoadingListener(new LoadingListener() {
             @Override
             public void loadingStarted(boolean reload) {
